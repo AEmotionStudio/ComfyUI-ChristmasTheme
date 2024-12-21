@@ -1,0 +1,14 @@
+[project]
+name = "comfyui-christmastheme"
+description = "A beautiful theme extension for ComfyUI that adds a festive touch with dynamic backgrounds, snowfall effects, and animated node connections"
+version = "1.0.0"
+license = {file = "LICENSE"}
+
+[project.urls]
+Repository = "https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme"
+#  Used by Comfy Registry https://comfyregistry.org
+
+[tool.comfy]
+PublisherId = "aemotionstudio"
+DisplayName = "ComfyUI-ChristmasTheme"
+Icon = ""
