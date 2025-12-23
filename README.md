@@ -1,6 +1,6 @@
 # ComfyUI Christmas Theme 🎄✨
 
-*Anotha one*
+*Anotha 2*
 
 ![ComfyUI Christmas Theme Overview](assets/main-preview.gif)
 
