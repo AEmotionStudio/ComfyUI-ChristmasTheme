@@ -1,5 +1,7 @@
 # ComfyUI Christmas Theme 🎄✨
 
+*Test Line*
+
 ![ComfyUI Christmas Theme Overview](assets/main-preview.gif)
 
 A beautiful theme extension for ComfyUI that adds a festive touch to your workflow with dynamic backgrounds, snowfall effects, and animated node connections.
