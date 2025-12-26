@@ -1,138 +1,213 @@
-# ComfyUI Christmas Theme 🎄✨
+<div align="center">
 
-*Anotha 2*
+# 🎄 ComfyUI Christmas Theme ✨
+
+**Transform your ComfyUI workspace into a winter wonderland**
+
+[![ComfyUI](https://img.shields.io/badge/ComfyUI-Extension-green?style=for-the-badge)](https://github.com/comfyanonymous/ComfyUI)
+[![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
+[![Version](https://img.shields.io/badge/Version-1.1.0-orange?style=for-the-badge)](https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme/releases)
 
 ![ComfyUI Christmas Theme Overview](assets/main-preview.gif)
 
-A beautiful theme extension for ComfyUI that adds a festive touch to your workflow with dynamic backgrounds, snowfall effects, and animated node connections.
+*Dynamic backgrounds • Animated snowfall • Festive node connections*
 
-## Features 🌟
+</div>
 
-### 1. Christmas Node Links 🎄
+---
+
+## 📢 Latest Update — December 25, 2025
+
+### 🚀 Performance Overhaul v1.1.0
+
+Major performance optimizations and bug fixes for a smoother experience:
+
+| Change | Description |
+|--------|-------------|
+| ⚡ **Adaptive Performance** | Auto-adjusts visual quality based on your FPS (3 tiers: normal/warning/critical) |
+| 🔧 **Settings API Fix** | Eliminated ~367,000 console deprecation warnings |
+| 🎯 **Visibility Detection** | Automatically pauses animations when tab is hidden |
+| 🧹 **Pure DOM Snowflakes** | Removed React dependency for lighter, faster snow effects |
+| 📱 **Device-Aware** | Snowflake count adapts to device capability (25-60 flakes) |
+| 🎨 **Gradient Caching** | Background themes now cache gradients for faster rendering |
+| 🔢 **Sin Lookup Table** | Pre-computed trigonometry for twinkle effects |
+| ♻️ **Object Pooling** | Reuses memory allocations to reduce garbage collection |
+
+---
+
+## ✨ Features
+
+<table>
+<tr>
+<td width="50%">
+
+### 🎄 Christmas Node Links
 ![Node Link Animations](assets/node-links_2.gif)
-![Node Link Animations](assets/node-links_options.png)
-- Animated light effects along connection links
-- Multiple color schemes:
-  - Traditional Christmas 🎄
-  - Warm White ☀️
-  - Cool White ❄️
-  - Multicolor 🌈
-  - Pastel 🎀
-  - New Year's Eve 🎉
-- Customizable light effects:
-  - Light size adjustment
-  - Glow intensity control
-  - Flow direction control
-  - Multiple link styles (spline, straight, linear, hidden)
-- Light animation effects:
-  - Steady
-  - Gentle Twinkle
-  - Sparkle
 
-### 2. Dynamic Background Effects 🌌
-![Background Themes](assets/backgrounds_1.png)
-![Background Themes](assets/backgrounds_2.png)
-- Animated starry background with smooth transitions
-- Multiple color themes:
-  - Classic Night 🌌
-  - Christmas Forest 🎄
-  - Candy Cane Red 🍬
-  - Frost Night ❄️
-  - Gingerbread 🍪
-  - Dark Night 🌑
+- Animated light effects along connections
+- **6 color schemes**: Traditional, Warm White, Cool White, Multicolor, Pastel, New Year's Eve
+- **3 animation styles**: Steady, Gentle Twinkle, Sparkle
+- Adjustable size, glow, and flow direction
+- Multiple link styles (spline, straight, linear, hidden)
 
-### 3. Snowfall Effect ❄️
+</td>
+<td width="50%">
+
+### ❄️ Snowfall Effect
 ![Snowfall Effect](assets/snowfall.gif)
-![Snowfall Effect](assets/snowfall_4.png)
-- Beautiful falling snowflakes with smooth animations
-- Customizable snowflake colors:
-  - Classic White ❄️
-  - Ice Blue 💠
-  - Rainbow 🌈
-  - Match Theme Colors 🎨
-  - New Year's Eve 🎉
-- Adjustable snowflake glow intensity
-- Performance-optimized rendering with batch processing
 
-### 4. Performance Features ⚡
-- Smart performance monitoring and optimization
-- Automatic animation pausing during workflow execution
-- Optimized React-based rendering system
-- Batch processing for efficient animation
-- Smart state management for smooth transitions
-- Memory-efficient implementation
+- Smooth CSS-based snowflake animations
+- **5 color options**: White, Ice Blue, Rainbow, Match Theme, New Year's
+- Adjustable glow intensity
+- GPU-accelerated rendering
+- Auto-scales based on device performance
 
-## Installation 📦
+</td>
+</tr>
+<tr>
+<td width="50%">
 
-1. Clone this repository into your ComfyUI custom_nodes directory:
+### 🌌 Dynamic Backgrounds
+![Background Themes](assets/backgrounds_1.png)
+
+- Animated starry night sky
+- **6 atmospheric themes**:
+  - 🌌 Classic Night
+  - 🎄 Christmas Forest
+  - 🍬 Candy Cane Red
+  - ❄️ Frost Night
+  - 🍪 Gingerbread
+  - 🌑 Dark Night
+
+</td>
+<td width="50%">
+
+### ⚡ Performance Features
+
+- **Adaptive quality** — auto-reduces effects when FPS drops
+- **Smart pausing** — animations freeze during workflow execution
+- **Tab detection** — pauses when browser tab is hidden
+- **Device-aware** — adjusts to hardware capabilities
+- **Object pooling** — minimizes memory allocation
+- **Cached gradients** — avoids recreating colors each frame
+
+</td>
+</tr>
+</table>
+
+---
+
+## 📦 Installation
+
+### Option 1: ComfyUI Manager (Recommended)
+Search for "Christmas Theme" in ComfyUI Manager and click Install.
+
+### Option 2: Git Clone
 ```bash
 cd ComfyUI/custom_nodes
 git clone https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme
 ```
 
-2. Restart ComfyUI to load the extension
+### Option 3: Manual Download
+Download the [latest release](https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme/releases) and extract to `ComfyUI/custom_nodes/`
 
-## Settings ⚙️
+After installation, **restart ComfyUI** to load the extension.
 
-### Christmas Effects Settings
-- **Christmas Lights**: Toggle node link effects on/off
-- **Color Scheme**: Choose from multiple themes:
-  - Traditional Christmas
-  - Warm White
-  - Cool White
-  - Multicolor
-  - Pastel
-  - New Year's Eve
-- **Light Effect**: Select animation style:
-  - Steady
-  - Gentle Twinkle
-  - Sparkle
-- **Light Size**: Adjust the size of light bulbs
-- **Glow Intensity**: Control the glow effect strength
-- **Flow Direction**: Choose forward or reverse animation
-- **Link Style**: Select connection style (spline, straight, linear, hidden)
+---
 
-### Background Theme Settings
-- **Background Effect**: Toggle background on/off
-- **Color Theme**: Choose from various atmospheric themes:
-  - Classic Night
-  - Christmas Forest
-  - Candy Cane Red
-  - Frost Night
-  - Gingerbread
-  - Dark Night
+## ⚙️ Settings
 
-### Snow Effect Settings
-- **Snow Effect**: Toggle snow on/off
-- **Snowflake Color**: Choose from various color schemes:
-  - White (Default)
-  - Blue
-  - Rainbow
-  - Match (matches current theme colors)
-  - New Year
-- **Snowflake Glow**: Adjust the glow intensity of snowflakes
+All settings are accessible via **ComfyUI Settings → Christmas Theme**
 
-### Performance Settings
-- **Pause Effects During Render**: Automatically pause animations during workflow execution for optimal performance
+<details>
+<summary><b>🎄 Christmas Effects</b></summary>
 
-## Technical Details 🔧
+| Setting | Options | Default |
+|---------|---------|---------|
+| Christmas Lights | On / Off | On |
+| Color Scheme | Traditional, Warm White, Cool White, Multicolor, Pastel, New Year's Eve | Traditional |
+| Light Effect | Steady, Gentle Twinkle, Sparkle | Gentle Twinkle |
+| Light Size | 1 - 10 | 3 |
+| Glow Intensity | 0 - 30 | 20 |
+| Flow Direction | Forward / Reverse | Forward |
+| Link Style | Spline, Straight, Linear, Hidden | Spline |
 
-- Built with a custom lightweight React implementation for optimal performance
-- Uses Canvas for efficient background rendering
-- Implements efficient batch processing for snowflake animations
-- Smart performance monitoring with automatic optimizations
-- Responsive design that adapts to the ComfyUI window size
+</details>
 
-## Compatibility 🤝
+<details>
+<summary><b>🌌 Background Theme</b></summary>
 
-- Tested with ComfyUI's latest version
-- Compatible with other UI extensions
-- Lightweight implementation with minimal performance impact
+| Setting | Options | Default |
+|---------|---------|---------|
+| Background Effect | On / Off | On |
+| Color Theme | Classic Night, Christmas Forest, Candy Cane Red, Frost Night, Gingerbread, Dark Night | Classic |
 
-## Contributing 🤝
+</details>
 
-Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+<details>
+<summary><b>❄️ Snow Effect</b></summary>
 
-## Acknowledgments 👏
+| Setting | Options | Default |
+|---------|---------|---------|
+| Snow Effect | On / Off | On |
+| Snowflake Color | White, Ice Blue, Rainbow, Match Theme, New Year's | White |
+| Snowflake Glow | 0 - 20 | 10 |
 
-- Thanks to the ComfyUI team for creating an amazing platform
+</details>
+
+<details>
+<summary><b>⚡ Performance</b></summary>
+
+| Setting | Options | Default |
+|---------|---------|---------|
+| Pause During Render | Enabled / Disabled | Enabled |
+
+</details>
+
+---
+
+## 🔧 Technical Details
+
+| Component | Technology |
+|-----------|------------|
+| Snowflakes | Pure DOM + CSS animations (GPU-accelerated) |
+| Background | Canvas 2D with gradient caching |
+| Node Links | Canvas override with adaptive rendering |
+| Settings | Centralized cache with onChange callbacks |
+
+**Performance optimizations include:**
+- O(1) frame time averaging
+- Pre-allocated object pools
+- Sin lookup tables for animations
+- Page Visibility API integration
+- Device capability detection
+
+---
+
+## 🤝 Compatibility
+
+- ✅ ComfyUI latest version
+- ✅ Works alongside other UI extensions
+- ✅ Minimal performance impact with adaptive scaling
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+For major changes, please open an issue first to discuss what you would like to change.
+
+---
+
+## 👏 Acknowledgments
+
+- Thanks to the [ComfyUI](https://github.com/comfyanonymous/ComfyUI) team for creating an amazing platform
+
+---
+
+<div align="center">
+
+*Happy Holidays! 🎄*
+
+</div>

@@ -1,4 +1,14 @@
 import { app } from "../../scripts/app.js";
+import { getSetting, updateCache, initSettingsCache, loadSettingFromStorage, BACKGROUND_THEMES } from "./settings-cache.js";
+
+// Track if extension has been set up to prevent double registration
+let extensionSetupComplete = false;
+
+// Page Visibility API - shared across modules
+let isPageVisible = true;
+document.addEventListener('visibilitychange', () => {
+    isPageVisible = document.visibilityState === 'visible';
+});
 
 class EnhancedBackground {
     constructor() {
@@ -10,7 +20,17 @@ class EnhancedBackground {
         this.entities = [];
         this.animationFrame = null;
         this.initialized = false;
-        
+
+        // Gradient caching
+        this._cachedGradient = null;
+        this._cachedTheme = null;
+        this._cachedHeight = 0;
+
+        // Performance tracking
+        this._frameCount = 0;
+        this._lastFpsCheck = performance.now();
+        this._currentFps = 60;
+
         // Bind methods
         this._boundRender = this.animate.bind(this);
         this._boundUpdateCanvasSize = this.updateCanvasSize.bind(this);
@@ -20,7 +40,7 @@ class EnhancedBackground {
         console.log("Initializing Enhanced Background...");
         try {
             // Check if background is enabled
-            if (!app.ui.settings.getSettingValue("ChristmasTheme.Background.Enabled", true)) {
+            if (!getSetting("ChristmasTheme.Background.Enabled")) {
                 return false;
             }
 
@@ -56,7 +76,6 @@ class EnhancedBackground {
 
             // Wait for app.canvas to be available
             if (!app.canvas?.canvas) {
-                console.log("Waiting for app.canvas...");
                 await new Promise(resolve => {
                     const checkCanvas = () => {
                         if (app.canvas?.canvas) {
@@ -78,14 +97,18 @@ class EnhancedBackground {
             // Insert before graph canvas
             graphCanvas.parentElement.insertBefore(this.container, graphCanvas);
 
-            // Initialize Canvas 2D context
-            this.ctx = this.canvas.getContext("2d");
+            // Initialize Canvas 2D context with optimizations
+            this.ctx = this.canvas.getContext("2d", {
+                alpha: false,  // No transparency needed - better performance
+                desynchronized: true  // Reduce latency
+            });
+
             this.updateCanvasSize();
             this.initEntities();
             this.setupEventListeners();
             this.initialized = true;
             this.animate();
-            
+
             return true;
         } catch (error) {
             console.error("Error during initialization:", error);
@@ -93,8 +116,33 @@ class EnhancedBackground {
         }
     }
 
+    /**
+     * Get or create cached gradient
+     * Only recreates when theme or canvas height changes
+     */
+    getGradient() {
+        const colorTheme = getSetting("ChristmasTheme.Background.ColorTheme");
+
+        // Return cached gradient if nothing changed
+        if (this._cachedGradient &&
+            this._cachedTheme === colorTheme &&
+            this._cachedHeight === this.height) {
+            return this._cachedGradient;
+        }
+
+        // Create new gradient
+        const { top, bottom } = BACKGROUND_THEMES[colorTheme] || BACKGROUND_THEMES.classic;
+        this._cachedGradient = this.ctx.createLinearGradient(0, 0, 0, this.height);
+        this._cachedGradient.addColorStop(0, top);
+        this._cachedGradient.addColorStop(1, bottom);
+        this._cachedTheme = colorTheme;
+        this._cachedHeight = this.height;
+
+        return this._cachedGradient;
+    }
+
     initEntities() {
-        // Star class
+        // Optimized Star class using CSS-style animation timing
         class Star {
             constructor(options) {
                 this.size = Math.random() * 2.5;
@@ -105,39 +153,44 @@ class EnhancedBackground {
                 this.twinkleSpeed = 0.005 + Math.random() * 0.01;
                 this.twinklePhase = Math.random() * Math.PI * 2;
                 this.twinkleRange = 0.15 + Math.random() * 0.15;
+                // Pre-calculate sin lookup for this star's twinkle pattern
+                this._twinkleCycle = 0;
             }
 
-            reset() {
+            reset(width, height) {
                 this.size = Math.random() * 2.5;
                 this.speed = Math.random() * 0.02;
-                this.x = this.width;
-                this.y = Math.random() * this.height;
+                this.x = width;
+                this.y = Math.random() * height;
                 this.brightness = 0.35 + Math.random() * 0.2;
                 this.twinkleSpeed = 0.005 + Math.random() * 0.01;
                 this.twinkleRange = 0.15 + Math.random() * 0.15;
             }
 
-            update(ctx, width, height) {
+            update(ctx, width, height, skipTwinkle = false) {
                 this.x -= this.speed;
                 if (this.x < 0) {
-                    this.width = width;
-                    this.height = height;
-                    this.reset();
+                    this.reset(width, height);
                 } else {
-                    this.twinklePhase += this.twinkleSpeed;
-                    const twinkle = (Math.sin(this.twinklePhase) + 1) * 0.5;
-                    const alpha = this.brightness - (this.twinkleRange * twinkle);
-                    
-                    ctx.globalAlpha = alpha;
+                    // Skip twinkle calculation in low-perf mode
+                    if (skipTwinkle) {
+                        ctx.globalAlpha = this.brightness;
+                    } else {
+                        this.twinklePhase += this.twinkleSpeed;
+                        const twinkle = (Math.sin(this.twinklePhase) + 1) * 0.5;
+                        ctx.globalAlpha = this.brightness - (this.twinkleRange * twinkle);
+                    }
                     ctx.fillRect(this.x, this.y, this.size, this.size);
-                    ctx.globalAlpha = 1.0;
                 }
             }
         }
 
-        // Initialize stars
+        // Calculate optimal star count based on screen size
+        // Cap at 1000 stars for performance
+        const starCount = Math.min(Math.floor(this.height * 0.7), 1000);
+
         this.entities = [];
-        for (let i = 0; i < this.height * 0.7; i++) {
+        for (let i = 0; i < starCount; i++) {
             this.entities.push(new Star({
                 x: Math.random() * this.width,
                 y: Math.random() * this.height
@@ -156,47 +209,58 @@ class EnhancedBackground {
     updateCanvasSize() {
         if (!this.ctx || !this.canvas || !this.container) return;
         const devicePixelRatio = Math.min(window.devicePixelRatio, 2);
-        this.width = this.container.clientWidth * devicePixelRatio;
-        this.height = this.container.clientHeight * devicePixelRatio;
+        const newWidth = this.container.clientWidth * devicePixelRatio;
+        const newHeight = this.container.clientHeight * devicePixelRatio;
 
-        if (this.canvas.width !== this.width || this.canvas.height !== this.height) {
-            this.canvas.width = this.width;
-            this.canvas.height = this.height;
+        if (this.canvas.width !== newWidth || this.canvas.height !== newHeight) {
+            this.canvas.width = newWidth;
+            this.canvas.height = newHeight;
+            this.width = newWidth;
+            this.height = newHeight;
+            // Invalidate gradient cache on resize
+            this._cachedGradient = null;
         }
     }
 
     animate() {
         if (!this.ctx || !this.initialized) return;
 
-        try {
-            // Get background colors from settings
-            const colorTheme = app.ui.settings.getSettingValue("ChristmasTheme.Background.ColorTheme", "classic");
-            const themes = {
-                classic: { top: '#05004c', bottom: '#110E19', star: '#ffffff' },
-                christmas: { top: '#1a472a', bottom: '#0d2115', star: '#ffffff' },
-                candycane: { top: '#8b0000', bottom: '#4a0404', star: '#ffffff' },
-                frostnight: { top: '#0a2351', bottom: '#051428', star: '#e0ffff' },
-                gingerbread: { top: '#8b4513', bottom: '#3c1f0d', star: '#ffd700' },
-                darknight: { top: '#000000', bottom: '#000000', star: '#808080' }
-            };
-            
-            const { top, bottom, star } = themes[colorTheme] || themes.classic;
-            
-            // Clear and set background with a gradient
-            const gradient = this.ctx.createLinearGradient(0, 0, 0, this.height);
-            gradient.addColorStop(0, top);
-            gradient.addColorStop(1, bottom);
-            this.ctx.fillStyle = gradient;
-            this.ctx.fillRect(0, 0, this.width, this.height);
-            
-            // Set styles for stars
-            this.ctx.fillStyle = star;
-            this.ctx.strokeStyle = star;
+        // Skip rendering if page is not visible
+        if (!isPageVisible) {
+            this.animationFrame = requestAnimationFrame(this._boundRender);
+            return;
+        }
 
-            // Update all entities
-            for (let i = 0; i < this.entities.length; i++) {
-                this.entities[i].update(this.ctx, this.width, this.height);
+        try {
+            // FPS tracking for adaptive quality
+            this._frameCount++;
+            const now = performance.now();
+            if (now - this._lastFpsCheck >= 1000) {
+                this._currentFps = this._frameCount;
+                this._frameCount = 0;
+                this._lastFpsCheck = now;
             }
+
+            // Determine if we should skip expensive operations
+            const lowPerfMode = this._currentFps < 30;
+
+            // Use cached gradient
+            this.ctx.fillStyle = this.getGradient();
+            this.ctx.fillRect(0, 0, this.width, this.height);
+
+            // Set star color from theme
+            const colorTheme = getSetting("ChristmasTheme.Background.ColorTheme");
+            const { star } = BACKGROUND_THEMES[colorTheme] || BACKGROUND_THEMES.classic;
+            this.ctx.fillStyle = star;
+
+            // Update stars (skip every other in low perf mode)
+            const step = lowPerfMode ? 2 : 1;
+            for (let i = 0; i < this.entities.length; i += step) {
+                this.entities[i].update(this.ctx, this.width, this.height, lowPerfMode);
+            }
+
+            // Reset alpha
+            this.ctx.globalAlpha = 1.0;
         } catch (error) {
             console.error("Render error:", error);
         }
@@ -224,6 +288,7 @@ class EnhancedBackground {
         }
 
         this.initialized = false;
+        this._cachedGradient = null;
         this.ctx = null;
         this.canvas = null;
         this.container = null;
@@ -241,15 +306,24 @@ let backgroundInstance = null;
 app.registerExtension({
     name: "Comfy.EnhancedBackground",
     async setup() {
+        // Prevent double setup
+        if (extensionSetupComplete) {
+            return;
+        }
+        extensionSetupComplete = true;
+
         console.log("🎨 Setting up Enhanced Background extension...");
-        
+
+        // Initialize settings cache
+        initSettingsCache();
+
         // Clean up any existing instance
         if (backgroundInstance) {
             backgroundInstance.stop();
             backgroundInstance = null;
         }
 
-        // Add settings
+        // Add settings with onChange callbacks to update cache
         app.ui.settings.addSetting({
             id: "ChristmasTheme.Background.Enabled",
             name: "🌟 Background Effect",
@@ -261,6 +335,7 @@ app.registerExtension({
             defaultValue: true,
             section: "Background Theme",
             onChange: async (value) => {
+                updateCache("ChristmasTheme.Background.Enabled", value);
                 if (backgroundInstance) {
                     backgroundInstance.stop();
                     backgroundInstance = null;
@@ -286,20 +361,25 @@ app.registerExtension({
             ],
             defaultValue: "classic",
             section: "Background Theme",
-            onChange: async () => {
-                // Reinitialize the background with new colors
-                if (backgroundInstance && app.ui.settings.getSettingValue("ChristmasTheme.Background.Enabled", true)) {
-                    await backgroundInstance.init();
+            onChange: async (value) => {
+                updateCache("ChristmasTheme.Background.ColorTheme", value);
+                // Invalidate gradient cache so it rebuilds with new colors
+                if (backgroundInstance) {
+                    backgroundInstance._cachedGradient = null;
                 }
             }
         });
 
+        // Load stored values AFTER settings are registered
+        loadSettingFromStorage("ChristmasTheme.Background.Enabled");
+        loadSettingFromStorage("ChristmasTheme.Background.ColorTheme");
+
         // Create initial instance if enabled
-        if (app.ui.settings.getSettingValue("ChristmasTheme.Background.Enabled", true)) {
+        if (getSetting("ChristmasTheme.Background.Enabled")) {
             backgroundInstance = new EnhancedBackground();
             await backgroundInstance.init();
         }
-        
+
         // Return cleanup function
         return () => {
             if (backgroundInstance) {
@@ -309,3 +389,6 @@ app.registerExtension({
         };
     }
 });
+
+// Export visibility state for other modules
+export { isPageVisible };
