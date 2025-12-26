@@ -1,73 +1,74 @@
-// aether-snow.js
+// aether-snow.js - Optimized snowfall effect using pure CSS animations
 import { app } from "../../scripts/app.js";
-import { loadReactDependencies } from "./react-integration/comfy-react-integration.js";
+import { getSetting, updateCache, loadSettingFromStorage, COLOR_SCHEMES } from "./settings-cache.js";
+import { isPageVisible } from "./background-themes.js";
 
 const SNOWFLAKE_CONFIG = {
     MIN_SIZE: 8,
     MAX_SIZE: 24,
-    TOTAL_FLAKES: 50,
+    // Adaptive snowflake count based on performance
+    FLAKE_COUNTS: {
+        high: 60,    // High performance mode
+        medium: 40,  // Medium performance
+        low: 25      // Low performance / mobile
+    },
     BASE_OPACITY: 0.8,
     FALL_DURATION: {
         MIN: 25,
         MAX: 35
     },
-    BATCH_SIZE: 10
+    BATCH_SIZE: 5 // Smaller batches for smoother loading
 };
 
-const SNOWFLAKE_CHARS = [
-    '❅', // Current snowflake
-    '❆', // Heavier snowflake
-    '❄', // Classic snowflake
-];
+const SNOWFLAKE_CHARS = ['❅', '❆', '❄'];
+
+// Detect device performance capability
+function getPerformanceTier() {
+    // Check for low-end indicators
+    const isLowEnd = navigator.hardwareConcurrency <= 2 ||
+        navigator.deviceMemory <= 2 ||
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    if (isLowEnd) return 'low';
+
+    // Check for high-end indicators
+    const isHighEnd = navigator.hardwareConcurrency >= 8 &&
+        (navigator.deviceMemory === undefined || navigator.deviceMemory >= 8);
+
+    return isHighEnd ? 'high' : 'medium';
+}
 
 app.registerExtension({
-    name: "Christmas.Theme.SnowEffect",  // Changed name to match theme namespace
+    name: "Christmas.Theme.SnowEffect",
     async setup() {
         console.log("✨ Initializing Snow Effect...");
 
         try {
-            // Load React dependencies
-            const { React: MiniReact, ReactDOM: MiniReactDOM } = await loadReactDependencies();
-            
-            // Create container
+            // Determine optimal snowflake count based on device
+            const perfTier = getPerformanceTier();
+            const totalFlakes = SNOWFLAKE_CONFIG.FLAKE_COUNTS[perfTier];
+            console.log(`❄️ Performance tier: ${perfTier}, using ${totalFlakes} snowflakes`);
+
+            // Create container with GPU acceleration hints
             const container = document.createElement('div');
             container.id = 'comfy-aether-snow';
-            container.style.cssText = 'position: fixed; top: -10vh; left: 0; width: 100%; height: 200vh; overflow: hidden; pointer-events: none; z-index: 3;';
+            Object.assign(container.style, {
+                position: 'fixed',
+                top: '-10vh',
+                left: '0',
+                width: '100%',
+                height: '200vh',
+                overflow: 'hidden',
+                pointerEvents: 'none',
+                zIndex: '3',
+                contain: 'strict',
+                transform: 'translateZ(0)'
+            });
             document.body.appendChild(container);
 
-            // Create root for React rendering
-            const root = MiniReactDOM.createRoot(container);
-
-            const getSnowflakeColor = () => {
-                const colorScheme = app.ui.settings.getSettingValue("ChristmasTheme.Snowflake.ColorScheme", "white");
-                const christmasColors = app.ui.settings.getSettingValue("ChristmasTheme.ChristmasEffects.ColorScheme", "traditional");
-                
-                switch(colorScheme) {
-                    case "blue":
-                        return '#B0E2FF';
-                    case "rainbow":
-                        const rainbowPalette = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeead', '#d4a5a5'];
-                        return rainbowPalette[Math.floor(Math.random() * rainbowPalette.length)];
-                    case "match":
-                        const colorSchemes = {
-                            traditional: ['#ff0000', '#00ff00', '#ffff00', '#0000ff', '#ffffff'],
-                            warm: ['#ffd700', '#ffb347', '#ffa07a', '#ff8c69', '#fff0f5'],
-                            cool: ['#f0ffff', '#e0ffff', '#b0e2ff', '#87cefa', '#b0c4de'],
-                            multicolor: ['#ff1493', '#00ff7f', '#ff4500', '#4169e1', '#9370db'],
-                            pastel: ['#ffb6c1', '#98fb98', '#87ceeb', '#dda0dd', '#f0e68c'],
-                            newyear: ['#00ffff', '#ff1493', '#ffd700', '#4b0082', '#7fff00']
-                        };
-                        const selectedPalette = colorSchemes[christmasColors] || colorSchemes.traditional;
-                        return selectedPalette[Math.floor(Math.random() * selectedPalette.length)];
-                    case "newyear":
-                        return ['#00ffff', '#ff1493', '#ffd700', '#4b0082', '#7fff00'][Math.floor(Math.random() * 5)];
-                    default:
-                        return '#FFFFFF';
-                }
-            };
-            
-            // Add styles
+            // Add optimized CSS with GPU-accelerated animations
             const style = document.createElement('style');
+            style.id = 'snowflake-styles';
             style.textContent = `
                 @keyframes snowfall {
                     0% {
@@ -79,15 +80,12 @@ app.registerExtension({
                     }
                     25% {
                         transform: translate3d(15px, 20vh, 0);
-                        opacity: ${SNOWFLAKE_CONFIG.BASE_OPACITY};
                     }
                     50% {
                         transform: translate3d(-15px, 50vh, 0);
-                        opacity: ${SNOWFLAKE_CONFIG.BASE_OPACITY};
                     }
                     75% {
                         transform: translate3d(15px, 75vh, 0);
-                        opacity: ${SNOWFLAKE_CONFIG.BASE_OPACITY};
                     }
                     95% {
                         opacity: ${SNOWFLAKE_CONFIG.BASE_OPACITY};
@@ -102,194 +100,208 @@ app.registerExtension({
                     position: absolute;
                     pointer-events: none;
                     user-select: none;
-                    will-change: transform;
-                    z-index: 3;
+                    will-change: transform, opacity;
                     backface-visibility: hidden;
-                    animation-timing-function: linear;
-                    animation-fill-mode: forwards;
-                    animation-iteration-count: infinite;
-                    contain: layout style;
+                    animation: snowfall linear infinite;
+                    contain: layout style paint;
                 }
 
-                #comfy-aether-snow {
-                    contain: strict;
-                    transform: translateZ(0);
+                /* Pause animations when page not visible */
+                .snow-paused .snowflake {
+                    animation-play-state: paused;
                 }
             `;
             document.head.appendChild(style);
-            
-            // Create snowflakes
+
+            // State tracking
             let flakes = [];
-            const totalFlakes = SNOWFLAKE_CONFIG.TOTAL_FLAKES;
-            const batchSize = SNOWFLAKE_CONFIG.BATCH_SIZE;
             let currentBatch = 0;
             let isInitializing = true;
+            const batchSize = SNOWFLAKE_CONFIG.BATCH_SIZE;
 
-            // Update the render function to use React root
-            const renderSnowflakes = () => {
-                root.render(
-                    MiniReact.createElement('div', {
-                        style: {
-                            position: 'relative',
-                            width: '100%',
-                            height: '100%',
-                            transform: 'translateZ(0)'
-                        }
-                    }, flakes)
-                );
-            };
+            // Color helper
+            const getSnowflakeColor = () => {
+                const colorScheme = getSetting("ChristmasTheme.Snowflake.ColorScheme");
+                const christmasColors = getSetting("ChristmasTheme.ChristmasEffects.ColorScheme");
 
-            // Update addBatch to use the new render function
-            const addBatch = () => {
-                if (currentBatch * batchSize >= totalFlakes) {
-                    isInitializing = false;  // Mark initialization as complete
-                    return;
-                }
-                
-                const start = currentBatch * batchSize;
-                const end = Math.min(start + batchSize, totalFlakes);
-                
-                for (let i = start; i < end; i++) {
-                    flakes.push(createSnowflake(i));
-                }
-                
-                renderSnowflakes();
-                
-                currentBatch++;
-                if (currentBatch * batchSize < totalFlakes) {
-                    setTimeout(addBatch, 100);
+                switch (colorScheme) {
+                    case "blue":
+                        return '#B0E2FF';
+                    case "rainbow":
+                        const rainbowPalette = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeead', '#d4a5a5'];
+                        return rainbowPalette[Math.floor(Math.random() * rainbowPalette.length)];
+                    case "match":
+                        const selectedPalette = COLOR_SCHEMES[christmasColors] || COLOR_SCHEMES.traditional;
+                        return selectedPalette[Math.floor(Math.random() * selectedPalette.length)];
+                    case "newyear":
+                        return COLOR_SCHEMES.newyear[Math.floor(Math.random() * 5)];
+                    default:
+                        return '#FFFFFF';
                 }
             };
 
-            const createSnowflake = (id) => {
+            // Create a single snowflake DOM element
+            const createSnowflakeElement = (index) => {
                 const size = Math.random() * (SNOWFLAKE_CONFIG.MAX_SIZE - SNOWFLAKE_CONFIG.MIN_SIZE) + SNOWFLAKE_CONFIG.MIN_SIZE;
                 const duration = Math.random() * (SNOWFLAKE_CONFIG.FALL_DURATION.MAX - SNOWFLAKE_CONFIG.FALL_DURATION.MIN) + SNOWFLAKE_CONFIG.FALL_DURATION.MIN;
                 const startPosition = Math.random() * 100;
                 const color = getSnowflakeColor();
-                const glowIntensity = app.ui.settings.getSettingValue("ChristmasTheme.Snowflake.Glow", 10);
-                
-                // Add initial delay only during initialization
+                const glowIntensity = getSetting("ChristmasTheme.Snowflake.Glow");
                 const initialDelay = isInitializing ? Math.random() * duration : 0;
-                
-                return MiniReact.createElement('div', {
-                    class: 'snowflake',
-                    style: {
-                        left: `${startPosition}vw`,
-                        top: '0',
-                        fontSize: `${size}px`,
-                        animation: `snowfall ${duration}s linear infinite`,
-                        animationDelay: `${initialDelay}s`,
-                        color: color,
-                        textShadow: `0 0 ${glowIntensity}px ${color}`,
-                        transform: 'translateZ(0)'
-                    }
-                }, SNOWFLAKE_CHARS[Math.floor(Math.random() * SNOWFLAKE_CHARS.length)]);
+
+                const flake = document.createElement('div');
+                flake.className = 'snowflake';
+                flake.textContent = SNOWFLAKE_CHARS[Math.floor(Math.random() * SNOWFLAKE_CHARS.length)];
+                flake.dataset.index = index;
+
+                Object.assign(flake.style, {
+                    left: `${startPosition}vw`,
+                    top: '0',
+                    fontSize: `${size}px`,
+                    animationDuration: `${duration}s`,
+                    animationDelay: `${initialDelay}s`,
+                    color: color,
+                    textShadow: `0 0 ${glowIntensity}px ${color}`
+                });
+
+                return flake;
             };
 
-            // Store state in window object for access from settings
+            // Add batch of snowflakes using requestIdleCallback for smooth loading
+            const addBatch = () => {
+                if (currentBatch * batchSize >= totalFlakes) {
+                    isInitializing = false;
+                    return;
+                }
+
+                const scheduleNextBatch = (callback) => {
+                    if ('requestIdleCallback' in window) {
+                        requestIdleCallback(callback, { timeout: 200 });
+                    } else {
+                        setTimeout(callback, 50);
+                    }
+                };
+
+                const start = currentBatch * batchSize;
+                const end = Math.min(start + batchSize, totalFlakes);
+
+                // Create document fragment for batch DOM insertion
+                const fragment = document.createDocumentFragment();
+                for (let i = start; i < end; i++) {
+                    const flake = createSnowflakeElement(i);
+                    flakes.push(flake);
+                    fragment.appendChild(flake);
+                }
+                container.appendChild(fragment);
+
+                currentBatch++;
+                if (currentBatch * batchSize < totalFlakes) {
+                    scheduleNextBatch(addBatch);
+                }
+            };
+
+            // Render function (clears and recreates all flakes)
+            const renderSnowflakes = () => {
+                container.innerHTML = '';
+                const fragment = document.createDocumentFragment();
+                flakes.forEach(flake => fragment.appendChild(flake));
+                container.appendChild(fragment);
+            };
+
+            // Update all snowflake colors
+            const updateSnowflakeColors = () => {
+                const glowIntensity = getSetting("ChristmasTheme.Snowflake.Glow");
+                flakes.forEach(flake => {
+                    const newColor = getSnowflakeColor();
+                    flake.style.color = newColor;
+                    flake.style.textShadow = `0 0 ${glowIntensity}px ${newColor}`;
+                });
+            };
+
+            // Update all snowflake glow
+            const updateSnowflakeGlow = (value) => {
+                flakes.forEach(flake => {
+                    flake.style.textShadow = `0 0 ${value}px ${flake.style.color}`;
+                });
+            };
+
+            // Expose state for other modules
             window.snowflakeState = {
                 flakes,
-                currentBatch,
-                isInitializing,
+                get currentBatch() { return currentBatch; },
+                set currentBatch(v) { currentBatch = v; },
+                get isInitializing() { return isInitializing; },
+                set isInitializing(v) { isInitializing = v; },
                 renderSnowflakes,
                 addBatch,
-                getSnowflakeColor,  // Add the color function to the state
-                updateSnowflakeColors: () => {
-                    // Update colors of existing snowflakes
-                    const snowflakeElements = document.querySelectorAll('.snowflake');
-                    snowflakeElements.forEach(flake => {
-                        const newColor = getSnowflakeColor();
-                        flake.style.color = newColor;
-                        const glowIntensity = app.ui.settings.getSettingValue("ChristmasTheme.Snowflake.Glow", 10);
-                        flake.style.textShadow = `0 0 ${glowIntensity}px ${newColor}`;
-                    });
-                },
-                updateSnowflakeGlow: (value) => {
-                    // Update glow of existing snowflakes
-                    const snowflakeElements = document.querySelectorAll('.snowflake');
-                    snowflakeElements.forEach(flake => {
-                        flake.style.textShadow = `0 0 ${value}px ${flake.style.color}`;
-                    });
-                }
+                getSnowflakeColor,
+                updateSnowflakeColors,
+                updateSnowflakeGlow
             };
 
-            // Register settings after variables are defined
-            const snowContainer = document.getElementById('comfy-aether-snow');
-            if (snowContainer) {
-                // Set initial state based on setting
-                const isEnabled = app.ui.settings.getSettingValue("ChristmasTheme.Snowflake.Enabled", 1);
-                snowContainer.style.display = isEnabled ? 'block' : 'none';
-                
-                // Initialize snowflakes if enabled
-                if (isEnabled) {
-                    isInitializing = true;
-                    addBatch();
-                }
+            // Initialize based on current setting
+            const isEnabled = getSetting("ChristmasTheme.Snowflake.Enabled");
+            container.style.display = isEnabled ? 'block' : 'none';
+
+            if (isEnabled) {
+                addBatch();
             }
 
-            // Track the last known values
-            let lastKnownColorScheme = app.ui.settings.getSettingValue("ChristmasTheme.ChristmasEffects.ColorScheme", "traditional");
-            let lastKnownGlowValue = app.ui.settings.getSettingValue("ChristmasTheme.Snowflake.Glow", 10);
-            let lastKnownSnowflakeColorScheme = app.ui.settings.getSettingValue("ChristmasTheme.Snowflake.ColorScheme", "white");
-            let lastUpdateTime = Date.now();
+            // Visibility observer - pause animations when tab not visible
+            const handleVisibility = () => {
+                if (document.visibilityState === 'hidden') {
+                    container.classList.add('snow-paused');
+                } else {
+                    container.classList.remove('snow-paused');
+                }
+            };
+            document.addEventListener('visibilitychange', handleVisibility);
 
-            // Update snowflakes periodically to reflect settings changes
-            const updateInterval = setInterval(() => {
-                const currentTime = Date.now();
-                const timeSinceLastUpdate = currentTime - lastUpdateTime;
-                
-                // Only update if enough time has passed (prevent too frequent updates)
-                if (timeSinceLastUpdate < 100) return;
+            // Track values for change detection
+            let lastKnownColorScheme = getSetting("ChristmasTheme.ChristmasEffects.ColorScheme");
+            let lastKnownGlowValue = getSetting("ChristmasTheme.Snowflake.Glow");
+            let lastKnownSnowflakeColorScheme = getSetting("ChristmasTheme.Snowflake.ColorScheme");
 
-                const currentSnowSetting = app.ui.settings.getSettingValue("ChristmasTheme.Snowflake.Enabled", 1);
-                const currentColorScheme = app.ui.settings.getSettingValue("ChristmasTheme.ChristmasEffects.ColorScheme", "traditional");
-                const currentSnowflakeColorScheme = app.ui.settings.getSettingValue("ChristmasTheme.Snowflake.ColorScheme", "white");
-                const currentGlowValue = app.ui.settings.getSettingValue("ChristmasTheme.Snowflake.Glow", 10);
+            // Lightweight polling for "match" mode sync (only every 1s)
+            const checkMatchModeUpdates = setInterval(() => {
+                const currentSnowSetting = getSetting("ChristmasTheme.Snowflake.Enabled");
+                const currentColorScheme = getSetting("ChristmasTheme.ChristmasEffects.ColorScheme");
+                const currentSnowflakeColorScheme = getSetting("ChristmasTheme.Snowflake.ColorScheme");
+                const currentGlowValue = getSetting("ChristmasTheme.Snowflake.Glow");
 
-                // Check for any changes
+                // Color scheme changed
                 if (currentSnowflakeColorScheme !== lastKnownSnowflakeColorScheme) {
-                    window.snowflakeState.updateSnowflakeColors();
+                    updateSnowflakeColors();
                     lastKnownSnowflakeColorScheme = currentSnowflakeColorScheme;
-                    lastUpdateTime = currentTime;
                 }
 
+                // Glow changed
                 if (currentGlowValue !== lastKnownGlowValue) {
-                    window.snowflakeState.updateSnowflakeGlow(currentGlowValue);
+                    updateSnowflakeGlow(currentGlowValue);
                     lastKnownGlowValue = currentGlowValue;
-                    lastUpdateTime = currentTime;
                 }
 
-                // Check if we need to update due to color scheme changes when in match mode
-                const needsColorUpdate = currentSnowSetting === 1 && 
-                    currentSnowflakeColorScheme === "match" && 
-                    currentColorScheme !== lastKnownColorScheme;
-
-                if (needsColorUpdate) {
-                    window.snowflakeState.updateSnowflakeColors();
+                // Match mode needs to update when lights color changes
+                if (currentSnowSetting === 1 &&
+                    currentSnowflakeColorScheme === "match" &&
+                    currentColorScheme !== lastKnownColorScheme) {
+                    updateSnowflakeColors();
                     lastKnownColorScheme = currentColorScheme;
-                    lastUpdateTime = currentTime;
-                } else if (currentSnowSetting === 0) {
-                    // Ensure snowflakes stay hidden when disabled
+                }
+
+                // Handle disabled state
+                if (currentSnowSetting === 0 && flakes.length > 0) {
                     flakes = [];
                     currentBatch = 0;
-                    renderSnowflakes();
-                    if (snowContainer) {
-                        snowContainer.style.display = 'none';
-                    }
+                    container.innerHTML = '';
+                    container.style.display = 'none';
                 }
-            }, 100); // Check more frequently for smoother updates
+            }, 1000);
 
-            // Initial render - respect the current setting
-            const snowEnabled = app.ui.settings.getSettingValue("ChristmasTheme.Snowflake.Enabled", 1);
-            if (snowEnabled === 1) {
-                addBatch();
-            } else {
-                // Make sure container is hidden if snow is disabled
-                container.style.display = 'none';
-            }
-            
+            // Cleanup function
             return () => {
-                clearInterval(updateInterval);
+                clearInterval(checkMatchModeUpdates);
+                document.removeEventListener('visibilitychange', handleVisibility);
                 container.remove();
                 style.remove();
             };
