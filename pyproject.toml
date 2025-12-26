@@ -1,7 +1,7 @@
 [project]
 name = "comfyui-christmastheme"
 description = "A beautiful theme extension for ComfyUI that adds a festive touch with dynamic backgrounds, snowfall effects, and animated node connections"
-version = "1.0.1"
+version = "1.1.0"
 license = {file = "LICENSE"}
 
 [project.urls]
