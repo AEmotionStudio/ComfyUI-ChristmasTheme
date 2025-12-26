@@ -5,7 +5,8 @@
 **Transform your ComfyUI workspace into a winter wonderland**
 
 [![ComfyUI](https://img.shields.io/badge/ComfyUI-Extension-green?style=for-the-badge)](https://github.com/comfyanonymous/ComfyUI)
-[![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
+[![Dependencies](https://img.shields.io/badge/dependencies-none-brightgreen?style=for-the-badge&color=blue)](pyproject.toml)
+[![License](https://img.shields.io/badge/License-GPLv3-red?style=for-the-badge)](LICENSE)
 [![Version](https://img.shields.io/badge/Version-1.1.0-orange?style=for-the-badge)](https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme/releases)
 
 ![ComfyUI Christmas Theme Overview](assets/main-preview.gif)
@@ -184,25 +185,24 @@ All settings are accessible via **ComfyUI Settings → Christmas Theme**
 
 ---
 
-## 🤝 Compatibility
-
-- ✅ ComfyUI latest version
-- ✅ Works alongside other UI extensions
-- ✅ Minimal performance impact with adaptive scaling
-
----
-
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-For major changes, please open an issue first to discuss what you would like to change.
+Contributions are welcome! Whether it's bug reports, feature suggestions, or pull requests, your help is appreciated.
 
 ---
 
-## 👏 Acknowledgments
+## 🔗 Connect with Æmotion (Developer)
+-   YouTube: [AEmotionStudio](https://www.youtube.com/@aemotionstudio/videos)
+-   GitHub: [AEmotionStudio](https://github.com/AEmotionStudio)
+-   Discord: [Join our community](https://discord.gg/UzC9353mfp)
+-   Website: [aemotionstudio.org](https://aemotionstudio.org/)
 
-- Thanks to the [ComfyUI](https://github.com/comfyanonymous/ComfyUI) team for creating an amazing platform
+## ☕ Support
+If you find this project useful and wish to support its development, consider:
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/aemotionstudio)
+
+Your support helps dedicate more time to maintaining and improving this project, developing new features, and creating better documentation and tutorials.
 
 ---
 
