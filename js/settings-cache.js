@@ -20,6 +20,7 @@ const SETTING_DEFAULTS = {
     // Background
     "ChristmasTheme.Background.Enabled": true,
     "ChristmasTheme.Background.ColorTheme": "classic",
+    "ChristmasTheme.Background.ShootingStars": true,
 
     // Performance
     "ChristmasTheme.PauseDuringRender": true
