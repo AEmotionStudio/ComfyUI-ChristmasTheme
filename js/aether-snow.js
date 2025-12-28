@@ -1,50 +1,199 @@
-// aether-snow.js - Foreground snowfall effect (DOM-based)
+// aether-snow.js - Foreground snowfall effect (DOM-based with JS animation)
 // Background snowflakes are rendered via canvas in background-themes.js for proper depth
 import { app } from "../../scripts/app.js";
 import { getSetting, updateCache, loadSettingFromStorage, COLOR_SCHEMES } from "./settings-cache.js";
 import { isPageVisible } from "./background-themes.js";
 
 const SNOWFLAKE_CONFIG = {
-    MIN_SIZE: 4,
-    MAX_SIZE: 14,
+    MIN_SIZE: 8,
+    MAX_SIZE: 18,
     FLAKE_COUNTS: {
-        high: 60,
-        medium: 40,
-        low: 25
-    },
-    FALL_DURATION: {
-        MIN: 35,
-        MAX: 65
+        high: 50,
+        medium: 35,
+        low: 20
     },
     BATCH_SIZE: 5
 };
 
-const SNOWFLAKE_CHARS = ['❄', '❅', '❆'];
+// SVG snowflake path generators - 8 designs total
+const SNOWFLAKE_TYPES = {
+    // Branched - 6 arms with side branches
+    branched: (size) => {
+        let d = '';
+        for (let i = 0; i < 6; i++) {
+            const angle = (Math.PI / 3) * i;
+            const cos = Math.cos(angle), sin = Math.sin(angle);
+            d += `M ${size / 2} ${size / 2} L ${size / 2 + sin * size * 0.45} ${size / 2 - cos * size * 0.45} `;
+            const bx = size / 2 + sin * size * 0.25, by = size / 2 - cos * size * 0.25;
+            const bLen = size * 0.15;
+            const bAngle = Math.PI / 5;
+            d += `M ${bx} ${by} L ${bx + Math.sin(angle - bAngle) * bLen} ${by - Math.cos(angle - bAngle) * bLen} `;
+            d += `M ${bx} ${by} L ${bx + Math.sin(angle + bAngle) * bLen} ${by - Math.cos(angle + bAngle) * bLen} `;
+        }
+        return d;
+    },
+
+    minimal: (size) => {
+        let d = '';
+        for (let i = 0; i < 6; i++) {
+            const angle = (Math.PI / 3) * i;
+            const cos = Math.cos(angle), sin = Math.sin(angle);
+            d += `M ${size / 2} ${size / 2} L ${size / 2 + sin * size * 0.45} ${size / 2 - cos * size * 0.45} `;
+            const bx = size / 2 + sin * size * 0.25, by = size / 2 - cos * size * 0.25;
+            const bLen = size * 0.12;
+            d += `M ${bx} ${by} L ${bx + Math.sin(angle - Math.PI / 4) * bLen} ${by - Math.cos(angle - Math.PI / 4) * bLen} `;
+            d += `M ${bx} ${by} L ${bx + Math.sin(angle + Math.PI / 4) * bLen} ${by - Math.cos(angle + Math.PI / 4) * bLen} `;
+        }
+        return d;
+    },
+
+    stellar: (size) => {
+        let d = '';
+        for (let i = 0; i < 6; i++) {
+            const angle = (Math.PI / 3) * i;
+            const cos = Math.cos(angle), sin = Math.sin(angle);
+            d += `M ${size / 2} ${size / 2} L ${size / 2 + sin * size * 0.45} ${size / 2 - cos * size * 0.45} `;
+            [0.2, 0.32].forEach(pos => {
+                const bx = size / 2 + sin * size * pos, by = size / 2 - cos * size * pos;
+                const bLen = size * (0.18 - pos * 0.3);
+                d += `M ${bx} ${by} L ${bx + Math.sin(angle - Math.PI / 4) * bLen} ${by - Math.cos(angle - Math.PI / 4) * bLen} `;
+                d += `M ${bx} ${by} L ${bx + Math.sin(angle + Math.PI / 4) * bLen} ${by - Math.cos(angle + Math.PI / 4) * bLen} `;
+            });
+        }
+        return d;
+    },
+
+    emoji1: (size) => {
+        let d = '';
+        for (let i = 0; i < 6; i++) {
+            const angle = (Math.PI / 3) * i;
+            const cos = Math.cos(angle), sin = Math.sin(angle);
+            const tipX = size / 2 + sin * size * 0.45, tipY = size / 2 - cos * size * 0.45;
+            d += `M ${size / 2} ${size / 2} L ${tipX} ${tipY} `;
+            const tip = size * 0.06;
+            d += `M ${tipX - cos * tip} ${tipY - sin * tip} L ${tipX} ${tipY} L ${tipX + cos * tip} ${tipY + sin * tip} `;
+            const bx = size / 2 + sin * size * 0.27, by = size / 2 - cos * size * 0.27;
+            const bLen = size * 0.13;
+            d += `M ${bx} ${by} L ${bx + Math.sin(angle - Math.PI / 4) * bLen} ${by - Math.cos(angle - Math.PI / 4) * bLen} `;
+            d += `M ${bx} ${by} L ${bx + Math.sin(angle + Math.PI / 4) * bLen} ${by - Math.cos(angle + Math.PI / 4) * bLen} `;
+        }
+        return d;
+    },
+
+    emoji2: (size) => {
+        let d = '';
+        for (let i = 0; i < 6; i++) {
+            const angle = (Math.PI / 3) * i;
+            const cos = Math.cos(angle), sin = Math.sin(angle);
+            d += `M ${size / 2 + sin * size * 0.08} ${size / 2 - cos * size * 0.08} L ${size / 2 + sin * size * 0.45} ${size / 2 - cos * size * 0.45} `;
+            const cx = size / 2 + sin * size * 0.3, cy = size / 2 - cos * size * 0.3;
+            const cLen = size * 0.05;
+            d += `M ${cx - cos * cLen} ${cy - sin * cLen} L ${cx + cos * cLen} ${cy + sin * cLen} `;
+        }
+        return d;
+    },
+
+    emoji3: (size) => {
+        let d = '';
+        for (let i = 0; i < 6; i++) {
+            const angle = (Math.PI / 3) * i;
+            const cos = Math.cos(angle), sin = Math.sin(angle);
+            d += `M ${size / 2} ${size / 2} L ${size / 2 + sin * size * 0.45} ${size / 2 - cos * size * 0.45} `;
+            const cx = size / 2 + sin * size * 0.22, cy = size / 2 - cos * size * 0.22;
+            const cLen = size * 0.12;
+            const cAngle = Math.PI / 5;
+            d += `M ${cx + Math.sin(angle - cAngle) * cLen} ${cy - Math.cos(angle - cAngle) * cLen * 0.7} L ${cx} ${cy} L ${cx + Math.sin(angle + cAngle) * cLen} ${cy - Math.cos(angle + cAngle) * cLen * 0.7} `;
+        }
+        return d;
+    },
+
+    // Dendrite - fernlike with multiple branch levels
+    dendrite: (size) => {
+        let d = '';
+        for (let i = 0; i < 6; i++) {
+            const angle = (Math.PI / 3) * i;
+            const cos = Math.cos(angle), sin = Math.sin(angle);
+            d += `M ${size / 2} ${size / 2} L ${size / 2 + sin * size * 0.45} ${size / 2 - cos * size * 0.45} `;
+            [0.18, 0.28, 0.38].forEach((pos, idx) => {
+                const bx = size / 2 + sin * size * pos, by = size / 2 - cos * size * pos;
+                const bLen = size * (0.14 - idx * 0.03);
+                const bAngle = Math.PI / 4;
+                d += `M ${bx} ${by} L ${bx + Math.sin(angle - bAngle) * bLen} ${by - Math.cos(angle - bAngle) * bLen} `;
+                d += `M ${bx} ${by} L ${bx + Math.sin(angle + bAngle) * bLen} ${by - Math.cos(angle + bAngle) * bLen} `;
+            });
+        }
+        return d;
+    },
+
+    // Ornate - decorative with diamond tips
+    ornate: (size) => {
+        let d = '';
+        for (let i = 0; i < 6; i++) {
+            const angle = (Math.PI / 3) * i;
+            const cos = Math.cos(angle), sin = Math.sin(angle);
+            const tipX = size / 2 + sin * size * 0.42, tipY = size / 2 - cos * size * 0.42;
+            d += `M ${size / 2} ${size / 2} L ${tipX} ${tipY} `;
+            const dSize = size * 0.05;
+            d += `M ${tipX} ${tipY - dSize} L ${tipX + dSize * 0.7} ${tipY} L ${tipX} ${tipY + dSize} L ${tipX - dSize * 0.7} ${tipY} Z `;
+            const bx = size / 2 + sin * size * 0.22, by = size / 2 - cos * size * 0.22;
+            const bLen = size * 0.14;
+            d += `M ${bx} ${by} L ${bx + Math.sin(angle - Math.PI / 3) * bLen} ${by - Math.cos(angle - Math.PI / 3) * bLen} `;
+            d += `M ${bx} ${by} L ${bx + Math.sin(angle + Math.PI / 3) * bLen} ${by - Math.cos(angle + Math.PI / 3) * bLen} `;
+        }
+        return d;
+    }
+};
+
+const FLAKE_TYPE_NAMES = Object.keys(SNOWFLAKE_TYPES);
 
 function getPerformanceTier() {
     const isLowEnd = navigator.hardwareConcurrency <= 2 ||
         navigator.deviceMemory <= 2 ||
         /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
     if (isLowEnd) return 'low';
-
     const isHighEnd = navigator.hardwareConcurrency >= 8 &&
         (navigator.deviceMemory === undefined || navigator.deviceMemory >= 8);
-
     return isHighEnd ? 'high' : 'medium';
+}
+
+function createSVGSnowflake(size, color, flakeType) {
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('width', size);
+    svg.setAttribute('height', size);
+    svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+    svg.style.overflow = 'visible';
+
+    const path = document.createElementNS(ns, 'path');
+    path.setAttribute('d', SNOWFLAKE_TYPES[flakeType](size));
+    path.setAttribute('stroke', color);
+    path.setAttribute('stroke-width', Math.max(1, size * 0.06));
+    path.setAttribute('stroke-linecap', 'round');
+    path.setAttribute('stroke-linejoin', 'round');
+    path.setAttribute('fill', 'none');
+
+    const dot = document.createElementNS(ns, 'circle');
+    dot.setAttribute('cx', size / 2);
+    dot.setAttribute('cy', size / 2);
+    dot.setAttribute('r', size * 0.04);
+    dot.setAttribute('fill', color);
+
+    svg.appendChild(path);
+    svg.appendChild(dot);
+
+    return svg;
 }
 
 app.registerExtension({
     name: "Christmas.Theme.SnowEffect",
     async setup() {
-        console.log("✨ Initializing Premium Snow Effect...");
+        console.log("✨ Initializing Premium Snow Effect with JS animation...");
 
         try {
             const perfTier = getPerformanceTier();
             const totalFlakes = SNOWFLAKE_CONFIG.FLAKE_COUNTS[perfTier];
-            console.log(`❄️ Performance tier: ${perfTier}, using ${totalFlakes} foreground snowflakes`);
+            console.log(`❄️ Performance tier: ${perfTier}, using ${totalFlakes} foreground snowflakes (8 designs)`);
 
-            // Foreground container (DOM-based, always on top of nodes)
             const container = document.createElement('div');
             container.id = 'comfy-aether-snow';
             Object.assign(container.style, {
@@ -55,7 +204,7 @@ app.registerExtension({
                 height: '100%',
                 overflow: 'hidden',
                 pointerEvents: 'none',
-                zIndex: '9999'
+                zIndex: '100'
             });
             document.body.appendChild(container);
 
@@ -63,63 +212,17 @@ app.registerExtension({
             style.id = 'snowflake-styles';
             style.textContent = `
                 .snowflake {
-                    position: fixed;
-                    top: 0;
+                    position: absolute;
                     pointer-events: none;
                     user-select: none;
-                    z-index: 9999;
-                    font-family: Arial, sans-serif;
-                    will-change: transform;
-                    filter: drop-shadow(0 0 2px rgba(255,255,255,0.3));
-                }
-
-                .snow-paused .snowflake {
-                    animation-play-state: paused !important;
+                    will-change: transform, filter;
                 }
             `;
-
-            // Generate smooth drift patterns
-            const driftPatterns = [];
-            for (let i = 0; i < 15; i++) {
-                const driftAmp = 50 + Math.random() * 50;
-                const driftFreq = 1 + Math.random() * 1.5;
-                const phase = Math.random() * Math.PI * 2;
-
-                let keyframes = '';
-                const steps = 10;
-
-                for (let s = 0; s <= steps; s++) {
-                    const pct = s * (100 / steps);
-                    const y = Math.round((s / steps) * 110 - 5);
-                    const progress = s / steps;
-                    const x = Math.round(Math.sin(progress * driftFreq * Math.PI + phase) * driftAmp);
-
-                    let opacity = 'var(--flake-opacity, 0.6)';
-                    if (s === 0 || s === steps) opacity = '0';
-                    if (s === 1 || s === steps - 1) opacity = 'var(--flake-opacity, 0.6)';
-
-                    keyframes += `
-                        ${pct}% { 
-                            transform: translate(${x}px, ${y}vh);
-                            opacity: ${opacity};
-                        }
-                    `;
-                }
-
-                driftPatterns.push(`
-                    @keyframes graceful-snow-${i} {
-                        ${keyframes}
-                    }
-                `);
-            }
-
-            style.textContent += driftPatterns.join('\n');
             document.head.appendChild(style);
 
             let flakes = [];
-            let currentBatch = 0;
-            let isInitializing = true;
-            const batchSize = SNOWFLAKE_CONFIG.BATCH_SIZE;
+            let animationId = null;
+            let lastTime = performance.now();
 
             const getSnowflakeColor = () => {
                 const colorScheme = getSetting("ChristmasTheme.Snowflake.ColorScheme");
@@ -127,181 +230,182 @@ app.registerExtension({
 
                 switch (colorScheme) {
                     case "blue":
-                        const blueVariants = ['#d4f1f9', '#c8e8f0', '#b8dce8'];
-                        return blueVariants[Math.floor(Math.random() * blueVariants.length)];
+                        return ['#d4f1f9', '#c8e8f0', '#b8dce8'][Math.floor(Math.random() * 3)];
                     case "rainbow":
-                        const rainbowPalette = ['#ffb3ba', '#bae1ff', '#baffc9', '#ffffba', '#ffdfba'];
-                        return rainbowPalette[Math.floor(Math.random() * rainbowPalette.length)];
+                        return ['#ffb3ba', '#bae1ff', '#baffc9', '#ffffba', '#ffdfba'][Math.floor(Math.random() * 5)];
                     case "match":
-                        const selectedPalette = COLOR_SCHEMES[christmasColors] || COLOR_SCHEMES.traditional;
-                        return selectedPalette[Math.floor(Math.random() * selectedPalette.length)];
+                        const palette = COLOR_SCHEMES[christmasColors] || COLOR_SCHEMES.traditional;
+                        return palette[Math.floor(Math.random() * palette.length)];
                     case "newyear":
                         return COLOR_SCHEMES.newyear[Math.floor(Math.random() * 5)];
                     default:
-                        const whiteVariants = ['#ffffff', '#f8f9fa', '#f1f3f5'];
-                        return whiteVariants[Math.floor(Math.random() * whiteVariants.length)];
+                        return ['#ffffff', '#f8f9fa', '#f1f3f5'][Math.floor(Math.random() * 3)];
                 }
             };
 
-            const createSnowflakeElement = (index) => {
-                const size = SNOWFLAKE_CONFIG.MIN_SIZE +
-                    Math.random() * (SNOWFLAKE_CONFIG.MAX_SIZE - SNOWFLAKE_CONFIG.MIN_SIZE);
-
-                const sizeRatio = size / SNOWFLAKE_CONFIG.MAX_SIZE;
-                const baseDuration = SNOWFLAKE_CONFIG.FALL_DURATION.MAX -
-                    (sizeRatio * (SNOWFLAKE_CONFIG.FALL_DURATION.MAX - SNOWFLAKE_CONFIG.FALL_DURATION.MIN));
-                const fallDuration = baseDuration * (0.9 + Math.random() * 0.2);
-
-                const startPosition = Math.random() * 100;
-                const opacity = 0.4 + sizeRatio * 0.4;
-                const initialDelay = isInitializing ? Math.random() * fallDuration : 0;
-
-                const color = getSnowflakeColor();
+            const getGlowFilter = (color) => {
                 const glowIntensity = getSetting("ChristmasTheme.Snowflake.Glow") || 10;
-                const glowAmount = Math.min(glowIntensity * 0.5, 8);
-                const animNum = Math.floor(Math.random() * 15);
-
-                const flake = document.createElement('div');
-                flake.className = 'snowflake';
-                flake.textContent = SNOWFLAKE_CHARS[Math.floor(Math.random() * SNOWFLAKE_CHARS.length)];
-                flake.dataset.index = index;
-
-                Object.assign(flake.style, {
-                    left: `${startPosition}vw`,
-                    fontSize: `${size}px`,
-                    color: color,
-                    textShadow: `0 0 ${glowAmount}px ${color}`,
-                    '--flake-opacity': opacity,
-                    animation: `graceful-snow-${animNum} ${fallDuration}s linear infinite`,
-                    animationDelay: isInitializing ? `${initialDelay}s` : '0s'
-                });
-
-                return flake;
+                const glowAmount = Math.min(glowIntensity * 0.4, 8);
+                if (glowAmount < 1) return 'none';
+                return `drop-shadow(0 0 ${glowAmount}px ${color})`;
             };
 
-            const addBatch = () => {
-                if (currentBatch * batchSize >= totalFlakes) {
-                    isInitializing = false;
+            const createFlakeEntity = () => {
+                const size = SNOWFLAKE_CONFIG.MIN_SIZE +
+                    Math.random() * (SNOWFLAKE_CONFIG.MAX_SIZE - SNOWFLAKE_CONFIG.MIN_SIZE);
+                const sizeRatio = size / SNOWFLAKE_CONFIG.MAX_SIZE;
+                const color = getSnowflakeColor();
+
+                return {
+                    x: Math.random() * window.innerWidth,
+                    y: Math.random() * window.innerHeight,
+                    size: size,
+                    opacity: (0.3 + Math.random() * 0.2) + sizeRatio * 0.35, // Random base 0.3-0.5 plus size factor
+                    color: color,
+                    speed: 12 + Math.random() * 18, // Slightly slower
+                    drift: (Math.random() - 0.5) * 30,
+                    driftSpeed: 0.3 + Math.random() * 0.4,
+                    driftOffset: Math.random() * Math.PI * 2,
+                    rotation: Math.random() * Math.PI * 2,
+                    rotationSpeed: (Math.random() - 0.5) * 0.5,
+                    flakeType: FLAKE_TYPE_NAMES[Math.floor(Math.random() * FLAKE_TYPE_NAMES.length)],
+                    element: null
+                };
+            };
+
+            const updateFlakeGlow = (flake) => {
+                if (flake.element) {
+                    flake.element.style.filter = getGlowFilter(flake.color);
+                }
+            };
+
+            const initFlakes = () => {
+                container.innerHTML = '';
+                flakes = [];
+
+                for (let i = 0; i < totalFlakes; i++) {
+                    const flakeData = createFlakeEntity();
+
+                    const flake = document.createElement('div');
+                    flake.className = 'snowflake';
+                    const svg = createSVGSnowflake(flakeData.size, flakeData.color, flakeData.flakeType);
+                    flake.appendChild(svg);
+
+                    flake.style.opacity = flakeData.opacity;
+                    flake.style.filter = getGlowFilter(flakeData.color);
+                    container.appendChild(flake);
+
+                    flakeData.element = flake;
+                    flakes.push(flakeData);
+                }
+            };
+
+            const updateFlakeColor = (flake) => {
+                flake.color = getSnowflakeColor();
+                const svg = flake.element.querySelector('svg');
+                if (svg) {
+                    const path = svg.querySelector('path');
+                    const dot = svg.querySelector('circle');
+                    if (path) path.setAttribute('stroke', flake.color);
+                    if (dot) dot.setAttribute('fill', flake.color);
+                }
+                updateFlakeGlow(flake);
+            };
+
+            const animate = (currentTime) => {
+                if (!isPageVisible) {
+                    animationId = requestAnimationFrame(animate);
                     return;
                 }
 
-                const scheduleNextBatch = (callback) => {
-                    if ('requestIdleCallback' in window) {
-                        requestIdleCallback(callback, { timeout: 100 });
-                    } else {
-                        setTimeout(callback, 30);
+                const deltaTime = (currentTime - lastTime) / 1000;
+                lastTime = currentTime;
+
+                const time = currentTime / 1000;
+                const height = window.innerHeight;
+                const width = window.innerWidth;
+
+                for (const flake of flakes) {
+                    flake.y += flake.speed * deltaTime;
+                    flake.rotation += flake.rotationSpeed * deltaTime;
+
+                    const driftX = Math.sin(time * flake.driftSpeed + flake.driftOffset) * flake.drift;
+
+                    if (flake.y > height + 30) {
+                        flake.y = -30;
+                        flake.x = Math.random() * width;
+                        flake.flakeType = FLAKE_TYPE_NAMES[Math.floor(Math.random() * FLAKE_TYPE_NAMES.length)];
+                        updateFlakeColor(flake);
                     }
-                };
 
-                const start = currentBatch * batchSize;
-                const end = Math.min(start + batchSize, totalFlakes);
-
-                const fragment = document.createDocumentFragment();
-                for (let i = start; i < end; i++) {
-                    const flake = createSnowflakeElement(i);
-                    flakes.push(flake);
-                    fragment.appendChild(flake);
+                    flake.element.style.transform = `translate(${flake.x + driftX}px, ${flake.y}px) rotate(${flake.rotation}rad)`;
                 }
-                container.appendChild(fragment);
 
-                currentBatch++;
-                if (currentBatch * batchSize < totalFlakes) {
-                    scheduleNextBatch(addBatch);
-                }
-            };
-
-            const updateSnowflakeColors = () => {
-                const glowIntensity = getSetting("ChristmasTheme.Snowflake.Glow") || 10;
-                flakes.forEach(flake => {
-                    const newColor = getSnowflakeColor();
-                    const glowAmount = Math.min(glowIntensity * 0.5, 8);
-                    flake.style.color = newColor;
-                    flake.style.textShadow = `0 0 ${glowAmount}px ${newColor}`;
-                });
-            };
-
-            const updateSnowflakeGlow = (value) => {
-                flakes.forEach(flake => {
-                    const color = flake.style.color;
-                    const glowAmount = Math.min(value * 0.5, 8);
-                    flake.style.textShadow = `0 0 ${glowAmount}px ${color}`;
-                });
-            };
-
-            const renderSnowflakes = () => {
-                container.innerHTML = '';
-                const fragment = document.createDocumentFragment();
-                flakes.forEach(flake => fragment.appendChild(flake));
-                container.appendChild(fragment);
-            };
-
-            window.snowflakeState = {
-                flakes,
-                get currentBatch() { return currentBatch; },
-                set currentBatch(v) { currentBatch = v; },
-                get isInitializing() { return isInitializing; },
-                set isInitializing(v) { isInitializing = v; },
-                addBatch,
-                getSnowflakeColor,
-                updateSnowflakeColors,
-                updateSnowflakeGlow,
-                renderSnowflakes
+                animationId = requestAnimationFrame(animate);
             };
 
             const isEnabled = getSetting("ChristmasTheme.Snowflake.Enabled");
             container.style.display = isEnabled ? 'block' : 'none';
 
             if (isEnabled) {
-                addBatch();
+                initFlakes();
+                animationId = requestAnimationFrame(animate);
             }
 
             const handleVisibility = () => {
-                if (document.visibilityState === 'hidden') {
-                    container.classList.add('snow-paused');
-                } else {
-                    container.classList.remove('snow-paused');
+                if (document.visibilityState !== 'hidden') {
+                    lastTime = performance.now();
                 }
             };
             document.addEventListener('visibilitychange', handleVisibility);
 
-            let lastKnownColorScheme = getSetting("ChristmasTheme.ChristmasEffects.ColorScheme");
-            let lastKnownGlowValue = getSetting("ChristmasTheme.Snowflake.Glow");
-            let lastKnownSnowflakeColorScheme = getSetting("ChristmasTheme.Snowflake.ColorScheme");
+            // Settings change detection - check all settings
+            let lastColorScheme = getSetting("ChristmasTheme.Snowflake.ColorScheme");
+            let lastGlow = getSetting("ChristmasTheme.Snowflake.Glow");
+            let lastEnabled = getSetting("ChristmasTheme.Snowflake.Enabled");
 
-            const checkMatchModeUpdates = setInterval(() => {
-                const currentSnowSetting = getSetting("ChristmasTheme.Snowflake.Enabled");
-                const currentColorScheme = getSetting("ChristmasTheme.ChristmasEffects.ColorScheme");
-                const currentSnowflakeColorScheme = getSetting("ChristmasTheme.Snowflake.ColorScheme");
-                const currentGlowValue = getSetting("ChristmasTheme.Snowflake.Glow");
+            const checkSettings = setInterval(() => {
+                const currentEnabled = getSetting("ChristmasTheme.Snowflake.Enabled");
+                const currentColorScheme = getSetting("ChristmasTheme.Snowflake.ColorScheme");
+                const currentGlow = getSetting("ChristmasTheme.Snowflake.Glow");
 
-                if (currentSnowflakeColorScheme !== lastKnownSnowflakeColorScheme) {
-                    updateSnowflakeColors();
-                    lastKnownSnowflakeColorScheme = currentSnowflakeColorScheme;
+                // Handle enable/disable
+                if (currentEnabled !== lastEnabled) {
+                    if (currentEnabled === 1 || currentEnabled === true) {
+                        container.style.display = 'block';
+                        if (flakes.length === 0) {
+                            initFlakes();
+                            if (!animationId) animationId = requestAnimationFrame(animate);
+                        }
+                    } else {
+                        container.style.display = 'none';
+                    }
+                    lastEnabled = currentEnabled;
                 }
 
-                if (currentGlowValue !== lastKnownGlowValue) {
-                    updateSnowflakeGlow(currentGlowValue);
-                    lastKnownGlowValue = currentGlowValue;
+                // Handle color scheme change
+                if (currentColorScheme !== lastColorScheme) {
+                    flakes.forEach(updateFlakeColor);
+                    lastColorScheme = currentColorScheme;
                 }
 
-                if (currentSnowSetting === 1 &&
-                    currentSnowflakeColorScheme === "match" &&
-                    currentColorScheme !== lastKnownColorScheme) {
-                    updateSnowflakeColors();
-                    lastKnownColorScheme = currentColorScheme;
+                // Handle glow change
+                if (currentGlow !== lastGlow) {
+                    flakes.forEach(updateFlakeGlow);
+                    lastGlow = currentGlow;
                 }
 
-                if (currentSnowSetting === 0 && flakes.length > 0) {
+                // Handle disable with cleanup
+                if ((currentEnabled === 0 || currentEnabled === false) && flakes.length > 0) {
                     flakes = [];
-                    currentBatch = 0;
                     container.innerHTML = '';
-                    container.style.display = 'none';
                 }
-            }, 1000);
+            }, 500);
 
             return () => {
-                clearInterval(checkMatchModeUpdates);
+                clearInterval(checkSettings);
                 document.removeEventListener('visibilitychange', handleVisibility);
+                if (animationId) cancelAnimationFrame(animationId);
                 container.remove();
                 style.remove();
             };

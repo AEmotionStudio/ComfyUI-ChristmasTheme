@@ -25,6 +25,230 @@ let starInitialized = false;
 // Background snowflake entities (canvas-based, drawn behind nodes)
 let bgSnowflakeEntities = [];
 let bgSnowflakesInitialized = false;
+let lastBgColorScheme = null;
+let lastBgSnowflakeColorScheme = null;
+
+// Firework entities
+let fireworkRockets = [];
+let fireworkParticles = [];
+let lastFireworkTime = 0;
+const FIREWORK_COLORS = ['#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff', '#ff85c1', '#a855f7', '#00d4ff', '#ffffff'];
+
+// Create a new firework rocket
+function createFireworkRocket(width, height) {
+    return {
+        x: Math.random() * width * 0.8 + width * 0.1,
+        y: height - 50, // Start above bottom edge so visible
+        vx: (Math.random() - 0.5) * 2,
+        vy: -10 - Math.random() * 8, // Moderate velocity for mid-screen explosions
+        color: FIREWORK_COLORS[Math.floor(Math.random() * FIREWORK_COLORS.length)],
+        trail: [],
+        age: 0,
+        exploded: false
+    };
+}
+
+// Create explosion particles
+function createExplosionParticles(x, y, color) {
+    const particles = [];
+    const count = 40 + Math.floor(Math.random() * 30);
+    for (let i = 0; i < count; i++) {
+        const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.3;
+        const speed = 2 + Math.random() * 4;
+        particles.push({
+            x: x,
+            y: y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            color: color,
+            alpha: 1,
+            size: 1 + Math.random() * 2,
+            decay: 0.015 + Math.random() * 0.01
+        });
+    }
+    return particles;
+}
+
+// Function to update all background snowflake colors when settings change
+function updateBgSnowflakeColors() {
+    for (const flake of bgSnowflakeEntities) {
+        flake.color = getBgSnowflakeColor();
+    }
+}
+
+// New Year Countdown Timer
+let countdownElement = null;
+let countdownInterval = null;
+
+function createCountdownElement() {
+    if (countdownElement) return countdownElement;
+
+    const container = document.createElement('div');
+    container.id = 'christmas-theme-countdown';
+    container.innerHTML = `
+        <style>
+            #christmas-theme-countdown {
+                position: fixed;
+                bottom: 4px;
+                right: 260px; /* Offset from right corner to sit next to menu */
+                background: linear-gradient(135deg, rgba(30, 30, 60, 0.85), rgba(60, 30, 80, 0.85));
+                border: 1px solid #ffd700;
+                border-radius: 6px;
+                padding: 7px 12px;
+                font-family: 'Segoe UI', Tahoma, sans-serif;
+                color: #fff;
+                z-index: 9999;
+                pointer-events: none;
+                box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+                text-align: center;
+            }
+            #christmas-theme-countdown .countdown-title {
+                font-size: 7px;
+                color: #ffd700;
+                margin-bottom: 1px;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }
+            #christmas-theme-countdown .countdown-time {
+                font-size: 14px;
+                font-weight: bold;
+                color: #fff;
+                text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+                font-variant-numeric: tabular-nums;
+                line-height: 1.1;
+            }
+            #christmas-theme-countdown .countdown-labels {
+                font-size: 6px;
+                color: #aaa;
+                margin-top: 2px;
+            }
+            #christmas-theme-countdown .countdown-labels span {
+                display: inline-block;
+                width: 28px;
+                text-align: center;
+            }
+            #christmas-theme-countdown.celebration {
+                animation: celebrate 0.3s ease-in-out infinite;
+                border-color: #ff6b6b;
+                box-shadow: 0 0 25px rgba(255, 107, 107, 0.6);
+            }
+            @keyframes celebrate {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(1.1); }
+            }
+        </style>
+        <div class="countdown-title">🎆 New Year 2026 🎆</div>
+        <div class="countdown-time" id="countdown-display">00:00:00:00</div>
+        <div class="countdown-labels">
+            <span>Days</span><span>Hrs</span><span>Min</span><span>Sec</span>
+        </div>
+    `;
+    document.body.appendChild(container);
+    countdownElement = container;
+    return container;
+}
+
+// Finale state
+let finaleActive = false;
+let finaleStartTime = 0;
+const FINALE_DURATION = 15000; // 15 seconds of fireworks
+
+function triggerFinale() {
+    if (finaleActive) return;
+    finaleActive = true;
+    finaleStartTime = performance.now();
+    console.log("🎆 FINALE TRIGGERED!");
+}
+
+function updateCountdown() {
+    const display = document.getElementById('countdown-display');
+    if (!display) return;
+
+    const now = new Date();
+    let targetYear = now.getFullYear();
+    // If we're past Jan 1, target next year
+    if (now.getMonth() > 0 || (now.getMonth() === 0 && now.getDate() > 1)) {
+        targetYear++;
+    }
+    const newYear = new Date(targetYear, 0, 1, 0, 0, 0);
+    const diff = newYear - now;
+
+    if (diff <= 0) {
+        display.textContent = '🎉 Happy New Year! 🎉';
+        if (countdownElement) {
+            countdownElement.classList.add('celebration');
+        }
+        // Trigger finale only once
+        if (!finaleActive) {
+            triggerFinale();
+        }
+        return;
+    }
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+    display.textContent = `${days.toString().padStart(2, '0')}:${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+function toggleCountdownDisplay(enabled) {
+    if (enabled) {
+        createCountdownElement();
+        countdownElement.style.display = 'block';
+        updateCountdown();
+        if (!countdownInterval) {
+            countdownInterval = setInterval(updateCountdown, 1000);
+        }
+        // Add dev toggle button for testing finale
+        createDevToggle();
+    } else {
+        if (countdownElement) {
+            countdownElement.style.display = 'none';
+        }
+        if (countdownInterval) {
+            clearInterval(countdownInterval);
+            countdownInterval = null;
+        }
+        removeDevToggle();
+    }
+}
+
+// Dev toggle for testing finale
+let devToggleElement = null;
+function createDevToggle() {
+    if (devToggleElement) return;
+    const btn = document.createElement('button');
+    btn.id = 'finale-dev-toggle';
+    btn.textContent = '🎆 Test Finale';
+    btn.style.cssText = `
+        position: fixed;
+        bottom: 60px;
+        right: 260px;
+        padding: 8px 16px;
+        background: linear-gradient(135deg, #ff6b6b, #ffd93d);
+        border: none;
+        border-radius: 8px;
+        color: #000;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 10000;
+        font-size: 12px;
+    `;
+    btn.onclick = () => {
+        finaleActive = false; // Reset so it can trigger again
+        triggerFinale();
+    };
+    document.body.appendChild(btn);
+    devToggleElement = btn;
+}
+function removeDevToggle() {
+    if (devToggleElement) {
+        devToggleElement.remove();
+        devToggleElement = null;
+    }
+}
 
 // Gradient caching
 let cachedGradient = null;
@@ -215,7 +439,7 @@ function getBgSnowflakeColor() {
  */
 function initBgSnowflakes(width, height) {
     bgSnowflakeEntities = [];
-    const count = 20; // Moderate count for good depth without clutter
+    const count = 45; // Match approximate foreground count
 
     for (let i = 0; i < count; i++) {
         // Mix of sizes - some small (distant), some larger (closer but still behind)
@@ -242,13 +466,13 @@ function initBgSnowflakes(width, height) {
             size: size,
             opacity: opacity,
             color: getBgSnowflakeColor(), // Match color scheme
-            speed: 10 + Math.random() * 15, // Pixels per second
+            speed: 8 + Math.random() * 10, // Pixels per second (slower)
             drift: (Math.random() - 0.5) * 25, // Horizontal drift amplitude
             driftSpeed: 0.2 + Math.random() * 0.3, // Drift oscillation speed
             driftOffset: Math.random() * Math.PI * 2, // Phase offset
             rotation: Math.random() * Math.PI * 2, // Initial rotation
             rotationSpeed: (Math.random() - 0.5) * 0.3, // Slow rotation
-            flakeType: ['branched', 'minimal', 'stellar', 'emoji1', 'emoji2', 'emoji3'][Math.floor(Math.random() * 6)] // Random type
+            flakeType: ['branched', 'minimal', 'stellar', 'emoji1', 'emoji2', 'emoji3', 'dendrite', 'ornate'][Math.floor(Math.random() * 8)] // Random type
         });
     }
     bgSnowflakesInitialized = true;
@@ -258,10 +482,16 @@ function initBgSnowflakes(width, height) {
 /**
  * Draw a 6-pointed snowflake shape at the given position
  */
-function drawSnowflake(ctx, x, y, size, rotation) {
+function drawSnowflake(ctx, x, y, size, rotation, glowAmount = 0, color = null) {
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(rotation);
+
+    // Apply glow inside save/restore
+    if (glowAmount > 0 && color) {
+        ctx.shadowBlur = glowAmount;
+        ctx.shadowColor = color;
+    }
 
     // Draw 6 spokes
     for (let i = 0; i < 6; i++) {
@@ -555,6 +785,108 @@ function drawEmoji2746(ctx, x, y, size, rotation) {
 }
 
 /**
+ * Draw a dendrite-style snowflake - fernlike with multiple branch levels
+ */
+function drawDendriteSnowflake(ctx, x, y, size, rotation) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rotation);
+
+    for (let i = 0; i < 6; i++) {
+        ctx.save();
+        ctx.rotate((Math.PI / 3) * i);
+
+        // Main arm
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, -size);
+        ctx.stroke();
+
+        // Three branch pairs at different heights
+        const positions = [0.4, 0.6, 0.8];
+        positions.forEach((pos, idx) => {
+            const branchY = -size * pos;
+            const branchLen = size * (0.3 - idx * 0.06);
+            const branchAngle = Math.PI / 4;
+
+            ctx.beginPath();
+            ctx.moveTo(0, branchY);
+            ctx.lineTo(-Math.sin(branchAngle) * branchLen, branchY - Math.cos(branchAngle) * branchLen);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(0, branchY);
+            ctx.lineTo(Math.sin(branchAngle) * branchLen, branchY - Math.cos(branchAngle) * branchLen);
+            ctx.stroke();
+        });
+
+        ctx.restore();
+    }
+
+    // Center dot
+    ctx.beginPath();
+    ctx.arc(0, 0, size * 0.08, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+}
+
+/**
+ * Draw an ornate-style snowflake - decorative with diamond tips
+ */
+function drawOrnateSnowflake(ctx, x, y, size, rotation) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rotation);
+
+    for (let i = 0; i < 6; i++) {
+        ctx.save();
+        ctx.rotate((Math.PI / 3) * i);
+
+        // Main arm
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, -size * 0.9);
+        ctx.stroke();
+
+        // Diamond tip
+        const tipY = -size * 0.9;
+        const dSize = size * 0.1;
+        ctx.beginPath();
+        ctx.moveTo(0, tipY - dSize);
+        ctx.lineTo(dSize * 0.6, tipY);
+        ctx.lineTo(0, tipY + dSize);
+        ctx.lineTo(-dSize * 0.6, tipY);
+        ctx.closePath();
+        ctx.fill();
+
+        // Branches at 50%
+        const branchY = -size * 0.5;
+        const branchLen = size * 0.3;
+        const branchAngle = Math.PI / 3;
+
+        ctx.beginPath();
+        ctx.moveTo(0, branchY);
+        ctx.lineTo(-Math.sin(branchAngle) * branchLen, branchY - Math.cos(branchAngle) * branchLen);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(0, branchY);
+        ctx.lineTo(Math.sin(branchAngle) * branchLen, branchY - Math.cos(branchAngle) * branchLen);
+        ctx.stroke();
+
+        ctx.restore();
+    }
+
+    // Center dot
+    ctx.beginPath();
+    ctx.arc(0, 0, size * 0.1, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+}
+
+/**
  * Draw the enhanced background onto the canvas context
  */
 function drawEnhancedBackground(ctx, width, height) {
@@ -588,6 +920,19 @@ function drawEnhancedBackground(ctx, width, height) {
         initBgSnowflakes(width, height);
     }
 
+    // Check for color scheme changes and update all snowflake colors
+    if (snowEnabled && bgSnowflakeEntities.length > 0) {
+        const currentSnowflakeColorScheme = getSetting("ChristmasTheme.Snowflake.ColorScheme");
+        const currentChristmasColorScheme = getSetting("ChristmasTheme.ChristmasEffects.ColorScheme");
+
+        if (currentSnowflakeColorScheme !== lastBgSnowflakeColorScheme ||
+            (currentSnowflakeColorScheme === "match" && currentChristmasColorScheme !== lastBgColorScheme)) {
+            updateBgSnowflakeColors();
+            lastBgSnowflakeColorScheme = currentSnowflakeColorScheme;
+            lastBgColorScheme = currentChristmasColorScheme;
+        }
+    }
+
     // Draw gradient background
     ctx.save();
     const gradient = getGradient(ctx, height);
@@ -597,61 +942,82 @@ function drawEnhancedBackground(ctx, width, height) {
         ctx.fillRect(0, 0, width, height);
     }
 
-    // Draw stars by layer for proper depth effect
+    // Draw stars by layer for proper depth effect (if enabled)
+    const starsEnabled = getSetting("ChristmasTheme.Background.Stars");
+    const partyMode = getSetting("ChristmasTheme.Background.PartyMode");
     const colorTheme = getSetting("ChristmasTheme.Background.ColorTheme") || "classic";
     const theme = BACKGROUND_THEMES[colorTheme] || BACKGROUND_THEMES.classic;
     const time = now / 1000;
 
-    for (const star of starEntities) {
-        // Skip more stars in low perf mode, prioritize visible ones
-        if (lowPerfMode) {
-            if (star.layer === 'distant' && Math.random() > 0.3) continue;
-            if (star.layer === 'normal' && Math.random() > 0.6) continue;
-        }
+    // Party mode color palette (vibrant rave colors)
+    const partyColors = ['#ff0080', '#00ff80', '#8000ff', '#ff8000', '#00ffff', '#ff00ff', '#ffff00', '#00ff00'];
 
-        // Calculate twinkle with per-star variation to prevent sync
-        const starSpeed = star.twinkleSpeed * star.twinkleSpeedMod;
-        const twinkle = Math.sin(time * starSpeed + star.twinkleOffset);
-        const twinkle2 = Math.sin(time * starSpeed * 0.67 + star.twinkleOffset2);
-        const combinedTwinkle = (twinkle * 0.6 + twinkle2 * 0.4);
-        const opacity = star.baseOpacity * (0.5 + combinedTwinkle * 0.5);
-
-        // Use star's individual color
-        ctx.fillStyle = star.color;
-
-        // Apply layer-based rendering
-        if (star.hasGlow && !lowPerfMode) {
-            // Bright stars get a subtle glow
-            ctx.shadowBlur = star.size * 5;
-            ctx.shadowColor = star.color;
-            ctx.globalAlpha = opacity * 0.7;
-            ctx.beginPath();
-            ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Draw diffraction spikes on some bright stars - subtle and thin
-            if (star.hasSpikes) {
-                ctx.shadowBlur = 0;
-                const spikeLength = star.size * 4 * (0.6 + combinedTwinkle * 0.4);
-                ctx.strokeStyle = star.color;
-                ctx.lineWidth = 0.3;  // Thinner spikes
-                ctx.globalAlpha = opacity * 0.25;  // More subtle
-
-                // 4-point cross spikes
-                ctx.beginPath();
-                ctx.moveTo(star.x - spikeLength, star.y);
-                ctx.lineTo(star.x + spikeLength, star.y);
-                ctx.moveTo(star.x, star.y - spikeLength);
-                ctx.lineTo(star.x, star.y + spikeLength);
-                ctx.stroke();
+    if (starsEnabled) {
+        for (const star of starEntities) {
+            // Skip more stars in low perf mode, prioritize visible ones
+            if (lowPerfMode) {
+                if (star.layer === 'distant' && Math.random() > 0.3) continue;
+                if (star.layer === 'normal' && Math.random() > 0.6) continue;
             }
-            ctx.shadowBlur = 0;
-        } else {
-            // Regular stars - simple circles
-            ctx.globalAlpha = opacity * 0.5;
-            ctx.beginPath();
-            ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
-            ctx.fill();
+
+            // Calculate twinkle with per-star variation to prevent sync
+            let starSpeed = star.twinkleSpeed * star.twinkleSpeedMod;
+            let opacity, starColor;
+
+            if (partyMode) {
+                // Party mode: rapid twinkle and color cycling
+                starSpeed *= 8; // Much faster twinkle
+                const fastTwinkle = Math.sin(time * starSpeed + star.twinkleOffset);
+                const colorIndex = Math.floor((time * 3 + star.twinkleOffset) % partyColors.length);
+                starColor = partyColors[colorIndex];
+                opacity = star.baseOpacity * (0.4 + Math.abs(fastTwinkle) * 0.6);
+            } else {
+                // Normal mode
+                const twinkle = Math.sin(time * starSpeed + star.twinkleOffset);
+                const twinkle2 = Math.sin(time * starSpeed * 0.67 + star.twinkleOffset2);
+                const combinedTwinkle = (twinkle * 0.6 + twinkle2 * 0.4);
+                opacity = star.baseOpacity * (0.5 + combinedTwinkle * 0.5);
+                starColor = star.color;
+            }
+
+            // Use star's color (or party color)
+            ctx.fillStyle = starColor;
+
+            // Apply layer-based rendering
+            if (star.hasGlow && !lowPerfMode) {
+                // Bright stars get a subtle glow (enhanced in party mode)
+                ctx.shadowBlur = partyMode ? star.size * 10 : star.size * 5;
+                ctx.shadowColor = starColor;
+                ctx.globalAlpha = opacity * (partyMode ? 0.9 : 0.7);
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.size * (partyMode ? 1.3 : 1), 0, Math.PI * 2);
+                ctx.fill();
+
+                // Draw diffraction spikes on some bright stars - subtle and thin (skip in party mode)
+                if (star.hasSpikes && !partyMode) {
+                    const combinedTwinkle = Math.sin(time * starSpeed + star.twinkleOffset);
+                    ctx.shadowBlur = 0;
+                    const spikeLength = star.size * 4 * (0.6 + combinedTwinkle * 0.4);
+                    ctx.strokeStyle = starColor;
+                    ctx.lineWidth = 0.3;  // Thinner spikes
+                    ctx.globalAlpha = opacity * 0.25;  // More subtle
+
+                    // 4-point cross spikes
+                    ctx.beginPath();
+                    ctx.moveTo(star.x - spikeLength, star.y);
+                    ctx.lineTo(star.x + spikeLength, star.y);
+                    ctx.moveTo(star.x, star.y - spikeLength);
+                    ctx.lineTo(star.x, star.y + spikeLength);
+                    ctx.stroke();
+                }
+                ctx.shadowBlur = 0;
+            } else {
+                // Regular stars - simple circles
+                ctx.globalAlpha = opacity * (partyMode ? 0.7 : 0.5);
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.size * (partyMode ? 1.2 : 1), 0, Math.PI * 2);
+                ctx.fill();
+            }
         }
     }
 
@@ -712,7 +1078,7 @@ function drawEnhancedBackground(ctx, width, height) {
                 flake.y = -20;
                 flake.x = Math.random() * width;
                 flake.color = getBgSnowflakeColor(); // Get new color on wrap
-                flake.flakeType = ['branched', 'minimal', 'stellar', 'emoji1', 'emoji2', 'emoji3'][Math.floor(Math.random() * 6)]; // Random new type
+                flake.flakeType = ['branched', 'minimal', 'stellar', 'emoji1', 'emoji2', 'emoji3', 'dendrite', 'ornate'][Math.floor(Math.random() * 8)]; // Random new type
             }
 
             // Draw the snowflake shape with color and glow
@@ -721,10 +1087,34 @@ function drawEnhancedBackground(ctx, width, height) {
             ctx.fillStyle = flake.color;
             ctx.lineWidth = Math.max(0.5, flake.size * 0.12);
 
-            // Add glow effect
-            const glowAmount = Math.min(glowIntensity * 0.4, 6);
-            ctx.shadowBlur = glowAmount;
-            ctx.shadowColor = flake.color;
+            // Draw subtle glow (matching CSS drop-shadow appearance)
+            const glowAmount = Math.min(glowIntensity * 0.4, 8);
+            if (glowAmount > 0.5) {
+                // Convert hex color to rgba for canvas compatibility
+                const hexToRgba = (hex, alpha) => {
+                    const r = parseInt(hex.slice(1, 3), 16);
+                    const g = parseInt(hex.slice(3, 5), 16);
+                    const b = parseInt(hex.slice(5, 7), 16);
+                    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                };
+
+                const glowRadius = flake.size * 0.6 + glowAmount;
+                const gradient = ctx.createRadialGradient(
+                    flake.x + driftX, flake.y, flake.size * 0.1,
+                    flake.x + driftX, flake.y, glowRadius
+                );
+                gradient.addColorStop(0, hexToRgba(flake.color, 0.4));
+                gradient.addColorStop(0.5, hexToRgba(flake.color, 0.15));
+                gradient.addColorStop(1, hexToRgba(flake.color, 0));
+                ctx.globalAlpha = flake.opacity;
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(flake.x + driftX, flake.y, glowRadius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Reset for snowflake
+                ctx.fillStyle = flake.color;
+            }
 
             // Draw snowflake using appropriate style
             if (flake.flakeType === 'minimal') {
@@ -737,12 +1127,13 @@ function drawEnhancedBackground(ctx, width, height) {
                 drawEmoji2745(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
             } else if (flake.flakeType === 'emoji3') {
                 drawEmoji2746(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
+            } else if (flake.flakeType === 'dendrite') {
+                drawDendriteSnowflake(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
+            } else if (flake.flakeType === 'ornate') {
+                drawOrnateSnowflake(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
             } else {
                 drawSnowflake(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
             }
-
-            // Reset shadow for next element
-            ctx.shadowBlur = 0;
         }
     }
 
@@ -837,6 +1228,117 @@ function drawEnhancedBackground(ctx, width, height) {
             ctx.fill();
             ctx.shadowBlur = 0;
         }
+    }
+
+    // Fireworks effect (when enabled or during finale)
+    const fireworksEnabled = getSetting("ChristmasTheme.Background.Fireworks") || finaleActive;
+    if (fireworksEnabled) {
+        // Check if finale is still active
+        if (finaleActive && now - finaleStartTime > FINALE_DURATION) {
+            finaleActive = false;
+            console.log("🎆 Finale ended");
+        }
+
+        // Spawn rate depends on finale state
+        const spawnInterval = finaleActive ? 100 + Math.random() * 150 : 2000 + Math.random() * 2000;
+        if (now - lastFireworkTime > spawnInterval) {
+            // During finale, spawn multiple at once with special effects
+            const spawnCount = finaleActive ? 2 + Math.floor(Math.random() * 3) : 1;
+            for (let s = 0; s < spawnCount; s++) {
+                const rocket = createFireworkRocket(width, height);
+                // Special golden fireworks during finale (30% chance)
+                if (finaleActive && Math.random() < 0.3) {
+                    rocket.color = '#ffd700';
+                    rocket.vy = -10 - Math.random() * 5; // Higher launch
+                }
+                fireworkRockets.push(rocket);
+            }
+            lastFireworkTime = now;
+        }
+
+        // Update and draw rockets
+        for (let i = fireworkRockets.length - 1; i >= 0; i--) {
+            const rocket = fireworkRockets[i];
+
+            // Apply gravity and update position
+            rocket.vy += 0.15; // Gravity
+            rocket.x += rocket.vx;
+            rocket.y += rocket.vy;
+            rocket.age += deltaTime;
+
+            // Add trail point
+            rocket.trail.push({ x: rocket.x, y: rocket.y, alpha: 1 });
+            if (rocket.trail.length > 10) rocket.trail.shift();
+
+            // Explode when velocity slows (near peak)
+            if (rocket.vy > -1 && !rocket.exploded) {
+                rocket.exploded = true;
+                fireworkParticles.push(...createExplosionParticles(rocket.x, rocket.y, rocket.color));
+                fireworkRockets.splice(i, 1);
+                continue;
+            }
+
+            // Remove if too old
+            if (rocket.age > 5) {
+                fireworkRockets.splice(i, 1);
+                continue;
+            }
+
+            // Draw rocket trail
+            ctx.strokeStyle = rocket.color;
+            ctx.lineWidth = 2;
+            ctx.globalAlpha = 0.8;
+            ctx.beginPath();
+            for (let j = 0; j < rocket.trail.length; j++) {
+                const point = rocket.trail[j];
+                ctx.globalAlpha = (j / rocket.trail.length) * 0.6;
+                if (j === 0) {
+                    ctx.moveTo(point.x, point.y);
+                } else {
+                    ctx.lineTo(point.x, point.y);
+                }
+            }
+            ctx.stroke();
+
+            // Draw rocket head
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = rocket.color;
+            ctx.globalAlpha = 1;
+            ctx.beginPath();
+            ctx.arc(rocket.x, rocket.y, 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+
+        // Update and draw explosion particles
+        for (let i = fireworkParticles.length - 1; i >= 0; i--) {
+            const p = fireworkParticles[i];
+
+            // Apply physics
+            p.vy += 0.05; // Light gravity
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vx *= 0.98; // Friction
+            p.vy *= 0.98;
+            p.alpha -= p.decay;
+
+            // Remove faded particles
+            if (p.alpha <= 0) {
+                fireworkParticles.splice(i, 1);
+                continue;
+            }
+
+            // Draw particle with glow
+            ctx.fillStyle = p.color;
+            ctx.shadowBlur = 4;
+            ctx.shadowColor = p.color;
+            ctx.globalAlpha = p.alpha;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.shadowBlur = 0;
     }
 
     ctx.restore();
@@ -990,10 +1492,93 @@ app.registerExtension({
             }
         });
 
+        app.ui.settings.addSetting({
+            id: "ChristmasTheme.Background.Stars",
+            name: "⭐ Background Stars",
+            type: "combo",
+            options: [
+                { value: true, text: "✨ On" },
+                { value: false, text: "⭘ Off" }
+            ],
+            defaultValue: true,
+            section: "Background Theme",
+            onChange: async (value) => {
+                updateCache("ChristmasTheme.Background.Stars", value);
+                if (isInitialSetup) return;
+                if (app.canvas) {
+                    app.canvas.setDirty(true, true);
+                }
+            }
+        });
+
+        app.ui.settings.addSetting({
+            id: "ChristmasTheme.Background.PartyMode",
+            name: "🪩 Party Mode (Rave Stars)",
+            type: "combo",
+            options: [
+                { value: true, text: "🎉 On" },
+                { value: false, text: "⭘ Off" }
+            ],
+            defaultValue: false,
+            section: "Background Theme",
+            onChange: async (value) => {
+                updateCache("ChristmasTheme.Background.PartyMode", value);
+                if (isInitialSetup) return;
+                if (app.canvas) {
+                    app.canvas.setDirty(true, true);
+                }
+            }
+        });
+
+        app.ui.settings.addSetting({
+            id: "ChristmasTheme.Background.Fireworks",
+            name: "🎆 Fireworks",
+            type: "combo",
+            options: [
+                { value: true, text: "🎇 On" },
+                { value: false, text: "⭘ Off" }
+            ],
+            defaultValue: false,
+            section: "Background Theme",
+            onChange: async (value) => {
+                updateCache("ChristmasTheme.Background.Fireworks", value);
+                if (isInitialSetup) return;
+                // Clear existing fireworks when disabled
+                if (!value) {
+                    fireworkRockets = [];
+                    fireworkParticles = [];
+                }
+                if (app.canvas) {
+                    app.canvas.setDirty(true, true);
+                }
+            }
+        });
+
+        app.ui.settings.addSetting({
+            id: "ChristmasTheme.Background.Countdown",
+            name: "🎊 New Year Countdown",
+            type: "combo",
+            options: [
+                { value: true, text: "🕐 On" },
+                { value: false, text: "⭘ Off" }
+            ],
+            defaultValue: false,
+            section: "Background Theme",
+            onChange: async (value) => {
+                updateCache("ChristmasTheme.Background.Countdown", value);
+                if (isInitialSetup) return;
+                toggleCountdownDisplay(value);
+            }
+        });
+
         // Load stored values AFTER settings are registered
         loadSettingFromStorage("ChristmasTheme.Background.Enabled");
         loadSettingFromStorage("ChristmasTheme.Background.ColorTheme");
+        loadSettingFromStorage("ChristmasTheme.Background.Stars");
+        loadSettingFromStorage("ChristmasTheme.Background.PartyMode");
         loadSettingFromStorage("ChristmasTheme.Background.ShootingStars");
+        loadSettingFromStorage("ChristmasTheme.Background.Fireworks");
+        loadSettingFromStorage("ChristmasTheme.Background.Countdown");
 
         // Mark initial setup complete
         isInitialSetup = false;
@@ -1003,9 +1588,20 @@ app.registerExtension({
             installBackgroundHook();
         }
 
+        // Initialize countdown if enabled
+        if (getSetting("ChristmasTheme.Background.Countdown")) {
+            toggleCountdownDisplay(true);
+        }
+
         // Return cleanup function
         return () => {
             removeBackgroundHook();
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+            }
+            if (countdownElement) {
+                countdownElement.remove();
+            }
         };
     }
 });

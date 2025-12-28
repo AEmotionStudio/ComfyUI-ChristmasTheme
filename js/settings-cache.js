@@ -20,7 +20,11 @@ const SETTING_DEFAULTS = {
     // Background
     "ChristmasTheme.Background.Enabled": true,
     "ChristmasTheme.Background.ColorTheme": "classic",
+    "ChristmasTheme.Background.Stars": true,
+    "ChristmasTheme.Background.PartyMode": false,
     "ChristmasTheme.Background.ShootingStars": true,
+    "ChristmasTheme.Background.Fireworks": false,
+    "ChristmasTheme.Background.Countdown": false,
 
     // Performance
     "ChristmasTheme.PauseDuringRender": true
