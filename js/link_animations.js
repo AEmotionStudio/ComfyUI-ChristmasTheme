@@ -231,6 +231,19 @@ app.registerExtension({
         });
 
         app.ui.settings.addSetting({
+            id: "ChristmasTheme.ChristmasEffects.BulbShape",
+            name: "💡 Bulb Shape",
+            type: "combo",
+            options: [
+                { value: "classic", text: "🔴 Classic Round" },
+                { value: "icicle", text: "❄️ Icicle Point" }
+            ],
+            defaultValue: "classic",
+            section: "Christmas Effects",
+            onChange: (value) => updateCache("ChristmasTheme.ChristmasEffects.BulbShape", value)
+        });
+
+        app.ui.settings.addSetting({
             id: "ChristmasTheme.Link Style",
             name: "🔗 Link Style",
             type: "combo",
@@ -317,6 +330,7 @@ app.registerExtension({
         loadSettingFromStorage("ChristmasTheme.ChristmasEffects.Thickness");
         loadSettingFromStorage("ChristmasTheme.ChristmasEffects.GlowIntensity");
         loadSettingFromStorage("ChristmasTheme.ChristmasEffects.Direction");
+        loadSettingFromStorage("ChristmasTheme.ChristmasEffects.BulbShape");
         loadSettingFromStorage("ChristmasTheme.Link Style");
         loadSettingFromStorage("ChristmasTheme.Snowflake.Enabled");
         loadSettingFromStorage("ChristmasTheme.Snowflake.ColorScheme");
@@ -542,6 +556,7 @@ app.registerExtension({
             const colorScheme = getSetting("ChristmasTheme.ChristmasEffects.ColorScheme");
             const twinkleMode = getSetting("ChristmasTheme.ChristmasEffects.Twinkle");
             const linkStyle = getSetting("ChristmasTheme.Link Style");
+            const bulbShape = getSetting("ChristmasTheme.ChristmasEffects.BulbShape");
 
             const renderer = LinkRenderers[linkStyle];
             const christmasColors = COLOR_SCHEMES[colorScheme] || COLOR_SCHEMES.traditional;
@@ -556,6 +571,28 @@ app.registerExtension({
             // Pre-calculate twinkle function based on mode
             const steadyTwinkle = twinkleMode === "steady";
             const sparkleMode = twinkleMode === "sparkle";
+
+            // Icicle bulb helper function
+            const drawIcicleBulb = (ctx, x, y, size) => {
+                const bulbWidth = size * 1.2;
+                const bulbHeight = size * 3;
+                ctx.beginPath();
+                // Start at top center
+                ctx.moveTo(x, y - size * 0.5);
+                // Curve to left side
+                ctx.bezierCurveTo(
+                    x - bulbWidth, y,
+                    x - bulbWidth * 0.6, y + bulbHeight * 0.5,
+                    x, y + bulbHeight  // Pointed tip at bottom
+                );
+                // Curve back to start
+                ctx.bezierCurveTo(
+                    x + bulbWidth * 0.6, y + bulbHeight * 0.5,
+                    x + bulbWidth, y,
+                    x, y - size * 0.5
+                );
+                ctx.closePath();
+            };
 
             for (let itemIdx = 0; itemIdx < items.length; itemIdx++) {
                 const { start, end, color } = items[itemIdx];
@@ -602,19 +639,28 @@ app.registerExtension({
                     }
 
                     // Light bulb
-                    ctx.beginPath();
                     ctx.shadowBlur = effectiveGlow * 1.5 * flicker;
-                    ctx.arc(x, y, Thickness * 1.5, 0, Math.PI * 2);
                     ctx.fillStyle = lightColor;
                     ctx.shadowColor = lightColor;
                     ctx.globalAlpha = flicker;
-                    ctx.fill();
+
+                    if (bulbShape === "icicle") {
+                        // Icicle/pointed bulb shape
+                        drawIcicleBulb(ctx, x, y, Thickness);
+                        ctx.fill();
+                    } else {
+                        // Classic round bulb
+                        ctx.beginPath();
+                        ctx.arc(x, y, Thickness * 1.5, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
 
                     // Light cap (skip in low performance mode)
                     if (!skipCaps) {
                         ctx.beginPath();
                         ctx.shadowBlur = 0;
-                        ctx.arc(x, y - Thickness, Thickness * 0.5, 0, Math.PI * 2);
+                        const capY = bulbShape === "icicle" ? y - Thickness * 0.8 : y - Thickness;
+                        ctx.arc(x, capY, Thickness * 0.5, 0, Math.PI * 2);
                         ctx.fillStyle = '#c0c0c0';
                         ctx.globalAlpha = 1;
                         ctx.fill();
