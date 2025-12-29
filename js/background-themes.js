@@ -276,12 +276,16 @@ function createCountdownElement() {
                 width: 100%;
             }
             #christmas-theme-countdown .countdown-title svg {
-                width: 10px;
-                height: 10px;
+                width: 12px;
+                height: 12px;
                 fill: none;
                 stroke: #ffd700;
                 stroke-width: 2;
                 stroke-linecap: round;
+                vertical-align: middle;
+                flex-shrink: 0;
+                position: relative;
+                top: -1px;
             }
             #christmas-theme-countdown .countdown-grid {
                 display: flex;
@@ -814,8 +818,8 @@ function showFinaleButton() {
     btn.innerHTML = `Happy New Year!`;
     btn.style.cssText = `
         position: fixed;
-        bottom: 59px;
-        right: 273px;
+        bottom: 61px;
+        right: 277px;
         padding: 6px 12px;
         background: rgba(35, 35, 35, 0.95);
         border: 1px solid #ffd700;
@@ -2715,7 +2719,7 @@ app.registerExtension({
                 { value: "gingerbread", text: "🍪 Gingerbread" },
                 { value: "darknight", text: "🌑 Dark Night" }
             ],
-            defaultValue: "classic",
+            defaultValue: "frostnight",
             section: "Background Theme",
             onChange: async (value) => {
                 updateCache("ChristmasTheme.Background.ColorTheme", value);
@@ -2879,27 +2883,28 @@ app.registerExtension({
             }
         });
 
-        app.ui.settings.addSetting({
-            id: "ChristmasTheme.Background.ShowFinaleButton",
-            name: "🎆 Show Finale Button",
-            tooltip: "Turn on if you don't like surprises or wait till 00:00:00 for the show!",
-            type: "combo",
-            options: [
-                { value: true, text: "🎇 Show" },
-                { value: false, text: "🎁 Surprise" }
-            ],
-            defaultValue: false,
-            section: "Background Theme",
-            onChange: async (value) => {
-                updateCache("ChristmasTheme.Background.ShowFinaleButton", value);
-                if (isInitialSetup) return;
-                if (value && getSetting("ChristmasTheme.Background.Countdown")) {
-                    showFinaleButton();
-                } else {
-                    hideFinaleButton();
-                }
-            }
-        });
+        // Temporarily hidden - uncomment to re-enable
+        // app.ui.settings.addSetting({
+        //     id: "ChristmasTheme.Background.ShowFinaleButton",
+        //     name: "🎆 Show Finale Button",
+        //     tooltip: "Turn on if you don't like surprises or wait till 00:00:00 for the show!",
+        //     type: "combo",
+        //     options: [
+        //         { value: true, text: "🎇 Show" },
+        //         { value: false, text: "🎁 Surprise" }
+        //     ],
+        //     defaultValue: false,
+        //     section: "Background Theme",
+        //     onChange: async (value) => {
+        //         updateCache("ChristmasTheme.Background.ShowFinaleButton", value);
+        //         if (isInitialSetup) return;
+        //         if (value && getSetting("ChristmasTheme.Background.Countdown")) {
+        //             showFinaleButton();
+        //         } else {
+        //             hideFinaleButton();
+        //         }
+        //     }
+        // });
 
         // Load stored values AFTER settings are registered
         loadSettingFromStorage("ChristmasTheme.Background.Enabled");
@@ -2910,7 +2915,7 @@ app.registerExtension({
         loadSettingFromStorage("ChristmasTheme.Background.Fireworks");
         loadSettingFromStorage("ChristmasTheme.Background.MouseEffect");
         loadSettingFromStorage("ChristmasTheme.Background.Countdown");
-        loadSettingFromStorage("ChristmasTheme.Background.ShowFinaleButton");
+        // loadSettingFromStorage("ChristmasTheme.Background.ShowFinaleButton"); // Temporarily hidden
 
         // Mark initial setup complete
         isInitialSetup = false;
