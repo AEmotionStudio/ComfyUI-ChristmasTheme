@@ -17,7 +17,35 @@
 
 ---
 
-## 📢 Latest Update — December 25, 2025
+## 📢 Latest Update — December 28, 2025
+
+### 🎉 New Year's Live Celebration v1.2.0
+
+A massive update introducing a physics-based particle engine, interactive effects, and a synchronized New Year's finale.
+
+| New Feature | Description |
+|-------------|-------------|
+| ✨ **22 Mouse Effects** | Physics-based particle system with 22 unique interactive trails including Sparklers, Confetti, and Magic Wands. |
+| 🎊 **Live Countdown** | Dynamic timer that auto-targets the New Year with a pulsing "Celebration Mode" anticipation phase. |
+| 🤫 **Surprise Finale** | A spectacular, multi-stage 6-layer coordinated show triggered exactly at midnight. *No spoilers!* |
+| 🪩 **Rave Mode** | "Party Mode" setting that transforms background stars into a strobing disco light show. |
+| 🎨 **Visual Core 2.0** | Replaced emoji art with crisp SVG rendering for Snowflakes and Stars, plus new atmospheric Nebula clouds. |
+
+### ✨ Interactive Effect Library
+Fully modular physics system with unique friction, gravity, and spawn behaviors:
+
+| | | | |
+|---|---|---|---|
+| ✨ **Sparkler** | ❄️ **Snowflake** | 🎊 **Confetti** | ⭐ **Stardust** |
+| ☄️ **Comet** | 🌌 **Aurora** | 🎀 **Ribbon** | 💎 **Crystal** |
+| 🌸 **Petals** | 🎁 **Gifts** | 🍬 **Candy** | 🔮 **Magic Orb** |
+| ✨ **Magic Wand** | 🌟 **Nova** | 💧 **Bubbles** | 🔥 **Embers** |
+| ⚡ **Lightning** | 🍂 **Leaves** | 💫 **Wishes** | 🎵 **Notes** |
+| 💖 **Hearts** | | | |
+
+---
+
+## 📢 Previous Update — December 25, 2025
 
 ### 🚀 Performance Overhaul v1.1.0
 
@@ -208,6 +236,6 @@ Your support helps dedicate more time to maintaining and improving this project,
 
 <div align="center">
 
-*Happy Holidays! 🎄*
+*Happy Holidays and a Happy New Year!* 🎄
 
 </div>
