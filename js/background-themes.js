@@ -346,12 +346,360 @@ function createCountdownElement() {
 let finaleActive = false;
 let finaleStartTime = 0;
 const FINALE_DURATION = 15000; // 15 seconds of fireworks
+let finaleConfetti = [];
+let finaleRings = [];
+let finaleStars = [];
 
 function triggerFinale() {
     if (finaleActive) return;
     finaleActive = true;
     finaleStartTime = performance.now();
     console.log("🎆 FINALE TRIGGERED!");
+
+    // 1. Screen Flash
+    createScreenFlash();
+
+    // 2. "2026" Text Overlay
+    createYearText();
+
+    // 3. Golden Ring Expansion (multiple waves)
+    for (let i = 0; i < 3; i++) {
+        setTimeout(() => createGoldenRing(), i * 500);
+    }
+
+    // 4. Confetti Shower
+    createConfettiShower();
+
+    // 5. Cascade Fireworks (rapid fire)
+    triggerCascadeFireworks();
+}
+
+function createScreenFlash() {
+    const flash = document.createElement('div');
+    flash.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: radial-gradient(ellipse at center, rgba(255,255,255,0.9), rgba(255,215,0,0.6));
+        pointer-events: none;
+        z-index: 9999;
+        animation: finaleFlash 0.8s ease-out forwards;
+    `;
+
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes finaleFlash {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+    document.body.appendChild(flash);
+
+    setTimeout(() => {
+        flash.remove();
+        style.remove();
+    }, 1000);
+}
+
+function createYearText() {
+    const now = new Date();
+    const year = now.getFullYear() + (now.getMonth() === 0 && now.getDate() === 1 ? 0 : 1);
+
+    const text = document.createElement('div');
+    text.innerHTML = `
+        <div style="font-size: 120px; font-weight: 900; text-shadow: 0 0 30px #ffd700, 0 0 60px #ff8c00;">${year}</div>
+        <div style="font-size: 36px; font-weight: 600; margin-top: 10px;">Happy New Year!</div>
+    `;
+    text.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #ffd700;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        text-align: center;
+        pointer-events: none;
+        z-index: 9998;
+        animation: yearTextAnim 5s ease-out forwards;
+    `;
+
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes yearTextAnim {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+            30% { transform: translate(-50%, -50%) scale(1); }
+            80% { opacity: 1; }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.2); }
+        }
+    `;
+    document.head.appendChild(style);
+    document.body.appendChild(text);
+
+    setTimeout(() => {
+        text.remove();
+        style.remove();
+    }, 5500);
+}
+
+function createGoldenRing() {
+    const ring = document.createElement('div');
+    ring.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        width: 10px;
+        height: 10px;
+        border: 4px solid #ffd700;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+        z-index: 9997;
+        box-shadow: 0 0 20px #ffd700, 0 0 40px #ff8c00;
+        animation: ringExpand 2s ease-out forwards;
+    `;
+
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes ringExpand {
+            0% { width: 10px; height: 10px; opacity: 1; border-width: 4px; }
+            100% { width: 200vmax; height: 200vmax; opacity: 0; border-width: 2px; }
+        }
+    `;
+    document.head.appendChild(style);
+    document.body.appendChild(ring);
+
+    setTimeout(() => {
+        ring.remove();
+        style.remove();
+    }, 2500);
+}
+
+function createConfettiShower() {
+    const colors = ['#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff', '#9d4edd', '#ff85a1', '#ffd700', '#00ffff'];
+
+    // Create confetti container
+    const container = document.createElement('div');
+    container.id = 'finale-confetti-container';
+    container.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        pointer-events: none;
+        z-index: 9996;
+        overflow: hidden;
+    `;
+    document.body.appendChild(container);
+
+    // Add confetti animation style
+    const style = document.createElement('style');
+    style.id = 'confetti-style';
+    style.textContent = `
+        @keyframes confettiFall {
+            0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+            85% { opacity: 0.8; }
+            100% { transform: translateY(120vh) rotate(720deg); opacity: 0; }
+        }
+        .finale-confetti {
+            position: absolute;
+            animation: confettiFall linear forwards;
+        }
+    `;
+    document.head.appendChild(style);
+
+    // Create 150 confetti pieces
+    for (let i = 0; i < 150; i++) {
+        setTimeout(() => {
+            const confetti = document.createElement('div');
+            confetti.className = 'finale-confetti';
+            const size = 8 + Math.random() * 12;
+            const x = Math.random() * 100;
+            const duration = 3 + Math.random() * 4;
+            const delay = Math.random() * 0.5;
+
+            confetti.style.cssText = `
+                left: ${x}%;
+                top: -20px;
+                width: ${size}px;
+                height: ${size * 0.4}px;
+                background: ${colors[Math.floor(Math.random() * colors.length)]};
+                animation-duration: ${duration}s;
+                animation-delay: ${delay}s;
+                border-radius: 2px;
+            `;
+            container.appendChild(confetti);
+        }, Math.random() * 2000);
+    }
+
+    // Cleanup after 10 seconds
+    setTimeout(() => {
+        container.remove();
+        style.remove();
+    }, 10000);
+}
+
+function createStarRain() {
+    // Create star rain container
+    const container = document.createElement('div');
+    container.id = 'finale-star-container';
+    container.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        pointer-events: none;
+        z-index: 9995;
+        overflow: hidden;
+    `;
+    document.body.appendChild(container);
+
+    // Add star animation style
+    const style = document.createElement('style');
+    style.id = 'star-rain-style';
+    style.textContent = `
+        @keyframes starFall {
+            0% { transform: translateY(-20px); opacity: 1; }
+            80% { opacity: 1; }
+            100% { transform: translateY(100vh); opacity: 0; }
+        }
+        .finale-star {
+            position: absolute;
+            border-radius: 50%;
+            animation: starFall linear forwards;
+            box-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+        }
+        .finale-star::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, 0);
+            width: 2px;
+            height: 40px;
+            background: linear-gradient(to bottom, currentColor, transparent);
+            border-radius: 2px;
+        }
+    `;
+    document.head.appendChild(style);
+
+    // Create 40 falling stars
+    for (let i = 0; i < 40; i++) {
+        setTimeout(() => {
+            const star = document.createElement('div');
+            star.className = 'finale-star';
+            const size = 4 + Math.random() * 6;
+            const x = Math.random() * 100;
+            const duration = 1 + Math.random() * 1.5;
+            const color = Math.random() > 0.5 ? '#ffd700' : '#ffffff';
+
+            star.style.cssText = `
+                left: ${x}%;
+                top: -40px;
+                width: ${size}px;
+                height: ${size}px;
+                background: ${color};
+                color: ${color};
+                animation-duration: ${duration}s;
+            `;
+            container.appendChild(star);
+        }, Math.random() * 2000);
+    }
+
+    // Cleanup after 6 seconds
+    setTimeout(() => {
+        container.remove();
+        style.remove();
+    }, 6000);
+}
+
+function triggerCascadeFireworks() {
+    const canvas = document.getElementById('christmas-background');
+    if (!canvas) return;
+
+    // Launch 20 fireworks in rapid succession
+    for (let i = 0; i < 20; i++) {
+        setTimeout(() => {
+            const x = canvas.width * 0.1 + Math.random() * canvas.width * 0.8;
+            fireworkRockets.push(createFireworkRocket(x, canvas.height, true));
+        }, i * 200); // One every 200ms
+    }
+}
+
+function updateFinaleParticles(ctx, canvas) {
+    // Update confetti
+    for (let i = finaleConfetti.length - 1; i >= 0; i--) {
+        const c = finaleConfetti[i];
+        c.x += c.vx;
+        c.y += c.vy;
+        c.vy += 0.05; // gravity
+        c.vx *= 0.99;
+        c.rotation += c.rotationSpeed;
+        c.alpha -= c.decay;
+
+        const maxHeight = c.screenHeight || window.innerHeight;
+        if (c.alpha <= 0 || c.y > maxHeight + 50) {
+            finaleConfetti.splice(i, 1);
+        }
+    }
+
+    // Update falling stars
+    for (let i = finaleStars.length - 1; i >= 0; i--) {
+        const s = finaleStars[i];
+        s.trail.push({ x: s.x, y: s.y });
+        if (s.trail.length > 15) s.trail.shift();
+
+        s.y += s.vy;
+        s.alpha -= 0.01;
+
+        const maxHeight = s.screenHeight || window.innerHeight;
+        if (s.alpha <= 0 || s.y > maxHeight + 50) {
+            finaleStars.splice(i, 1);
+        }
+    }
+}
+
+function drawFinaleParticles(ctx) {
+    // Draw confetti
+    for (const c of finaleConfetti) {
+        ctx.save();
+        ctx.translate(c.x, c.y);
+        ctx.rotate(c.rotation);
+        ctx.globalAlpha = c.alpha;
+        ctx.fillStyle = c.color;
+        ctx.fillRect(-c.size / 2, -c.size / 4, c.size, c.size / 2);
+        ctx.restore();
+    }
+
+    // Draw falling stars with trails
+    for (const s of finaleStars) {
+        // Trail
+        for (let t = 0; t < s.trail.length; t++) {
+            const tp = s.trail[t];
+            ctx.globalAlpha = (t / s.trail.length) * s.alpha * 0.5;
+            ctx.fillStyle = s.color;
+            ctx.beginPath();
+            ctx.arc(tp.x, tp.y, s.size * 0.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Star
+        ctx.globalAlpha = s.alpha;
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = s.color;
+        ctx.fillStyle = s.color;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+    }
+
+    ctx.globalAlpha = 1;
 }
 
 function updateCountdown() {
@@ -481,6 +829,549 @@ function hideFinaleButton() {
     }
 }
 
+
+// ✨ Mouse Effects System (Modular)
+let mouseParticles = [];
+let mouseX = 0;
+let mouseY = 0;
+let lastMouseX = 0;
+let lastMouseY = 0;
+let mouseEffectInitialized = false;
+
+// Effect configurations (DATA) - each effect defines its behavior
+const MOUSE_EFFECTS = {
+    none: null,
+    sparkler: {
+        colors: ['#ffd700', '#ffec99', '#fff9db', '#ffffff'],
+        gravity: 0.08, decay: 0.015, size: [1, 3], spread: 4, friction: 0.98,
+        shape: 'circle', glow: 10, hasTrail: true, twinkle: true,
+        spawnMode: 'burst' // explodes outward from cursor
+    },
+    snowflake: {
+        colors: ['#ffffff', '#e0f7ff', '#b8e6ff', '#d4f1f9'],
+        gravity: 0.015, decay: 0.006, size: [3, 6], spread: 0.5, friction: 0.99,
+        shape: 'snowflake', glow: 8, hasTrail: false, drift: true, rotation: true,
+        spawnMode: 'drop' // drops gently from cursor position
+    },
+    confetti: {
+        colors: ['#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff', '#9d4edd', '#ff85a1'],
+        gravity: 0.05, decay: 0.008, size: [3, 5], spread: 6, friction: 0.97,
+        shape: 'rectangle', glow: 0, spin: true,
+        spawnMode: 'pop' // pops upward then falls
+    },
+    stardust: {
+        colors: ['#fffacd', '#fff8dc', '#fffaf0', '#ffffff'],
+        gravity: 0.005, decay: 0.01, size: [1, 2], spread: 2, friction: 0.995,
+        shape: 'star', glow: 12, twinkle: true,
+        spawnMode: 'float' // floats gently in place
+    },
+    comet: {
+        colors: ['#87ceeb', '#add8e6', '#ffffff'],
+        gravity: 0.0, decay: 0.025, size: [2, 4], spread: 0.2, friction: 0.92,
+        shape: 'circle', glow: 15, hasTrail: true, trailLength: 15,
+        spawnMode: 'follow' // tight follow, long trail
+    },
+    aurora: {
+        colors: ['#00ff88', '#00ffcc', '#00ccff', '#8844ff'],
+        gravity: -0.02, decay: 0.006, size: [2, 4], spread: 1, friction: 0.99,
+        shape: 'circle', glow: 20, wave: true,
+        spawnMode: 'rise' // floats upward with wave
+    },
+    ribbon: {
+        colors: ['#ff69b4', '#ff1493', '#db7093', '#ffb6c1'],
+        gravity: 0.0, decay: 0.02, size: [2, 3], spread: 0.1, friction: 0.85,
+        shape: 'circle', glow: 5, hasTrail: true, trailLength: 10,
+        spawnMode: 'follow' // smooth following ribbon
+    },
+    crystal: {
+        colors: ['#e0ffff', '#afeeee', '#b0e0e6', '#ffffff'],
+        gravity: 0.03, decay: 0.01, size: [3, 5], spread: 2, friction: 0.96,
+        shape: 'diamond', glow: 15, shimmer: true,
+        spawnMode: 'scatter' // scatters in random directions
+    },
+    petals: {
+        colors: ['#ffb7c5', '#ffc0cb', '#ff69b4', '#fff0f5'],
+        gravity: 0.02, decay: 0.008, size: [4, 6], spread: 3, friction: 0.98,
+        shape: 'petal', glow: 5, flutter: true, rotation: true,
+        spawnMode: 'flutter' // drifts with flutter motion
+    },
+    gifts: {
+        colors: ['#ff6b6b', '#4ade80', '#ffd700', '#60a5fa'],
+        gravity: 0.06, decay: 0.008, size: [5, 8], spread: 3, friction: 0.96,
+        shape: 'box', glow: 0, rotation: true,
+        spawnMode: 'toss' // tossed upward then tumbles
+    },
+    candy: {
+        colors: ['#ff0000', '#ffffff'],
+        gravity: 0.035, decay: 0.01, size: [3, 5], spread: 4, friction: 0.97,
+        shape: 'candy', glow: 5, spin: true,
+        spawnMode: 'bounce' // bouncy scatter
+    },
+    orb: {
+        colors: ['#9d4edd', '#7b2cbf', '#c77dff', '#e0aaff'],
+        gravity: 0.0, decay: 0.015, size: [3, 5], spread: 0.5, friction: 0.95,
+        shape: 'circle', glow: 25, orbit: true, pulseGlow: true,
+        spawnMode: 'orbit' // orbits around spawn point
+    },
+    magic: {
+        colors: ['#ffd700', '#ff69b4', '#00ffff', '#ff6b6b', '#9d4edd'],
+        gravity: 0.0, decay: 0.015, size: [1, 2], spread: 0.5, friction: 0.98,
+        shape: 'star', glow: 15, spiral: true, twinkle: true,
+        spawnMode: 'spiral' // spirals outward from cursor
+    },
+    nova: {
+        colors: ['#ffffff', '#fffacd', '#ffd700', '#ff8c00'],
+        gravity: 0.0, decay: 0.02, size: [2, 4], spread: 0, friction: 0.96,
+        shape: 'star', glow: 20, twinkle: true,
+        spawnMode: 'burst' // expanding starburst
+    },
+    bubbles: {
+        colors: ['#87ceeb', '#b0e0e6', '#e0ffff', '#ffffff'],
+        gravity: -0.03, decay: 0.008, size: [4, 8], spread: 2, friction: 0.99,
+        shape: 'bubble', glow: 8, shimmer: true,
+        spawnMode: 'rise' // floating upward
+    },
+    embers: {
+        colors: ['#ff4500', '#ff6347', '#ffa500', '#ffd700', '#ffec99'],
+        gravity: -0.02, decay: 0.012, size: [1, 3], spread: 2, friction: 0.98,
+        shape: 'circle', glow: 12, twinkle: true,
+        spawnMode: 'rise' // drifting upward like fire
+    },
+    lightning: {
+        colors: ['#00ffff', '#87ceeb', '#ffffff', '#e0ffff'],
+        gravity: 0.0, decay: 0.04, size: [1, 2], spread: 3, friction: 0.9,
+        shape: 'circle', glow: 20, hasTrail: true, trailLength: 6,
+        spawnMode: 'scatter' // quick electric sparks
+    },
+    leaves: {
+        colors: ['#8b4513', '#d2691e', '#cd853f', '#f4a460', '#daa520'],
+        gravity: 0.025, decay: 0.008, size: [4, 7], spread: 3, friction: 0.98,
+        shape: 'leaf', glow: 0, flutter: true, rotation: true,
+        spawnMode: 'flutter' // drifting down with spin
+    },
+    wishes: {
+        colors: ['#ffffff', '#fffacd', '#ffd700'],
+        gravity: 0.0, decay: 0.03, size: [1, 2], spread: 0.5, friction: 0.85,
+        shape: 'circle', glow: 15, hasTrail: true, trailLength: 20,
+        spawnMode: 'follow' // shooting star streaks
+    },
+    notes: {
+        colors: ['#ff69b4', '#9d4edd', '#4d96ff', '#ffd700'],
+        gravity: -0.015, decay: 0.01, size: [6, 10], spread: 3, friction: 0.98,
+        shape: 'note', glow: 5, sway: true,
+        spawnMode: 'rise' // floating musical notes
+    },
+    hearts: {
+        colors: ['#ff69b4', '#ff1493', '#ff6b6b', '#ff85a1'],
+        gravity: -0.01, decay: 0.01, size: [4, 7], spread: 2, friction: 0.98,
+        shape: 'heart', glow: 8, sway: true,
+        spawnMode: 'rise' // floating hearts
+    }
+};
+
+// Shape renderers (DRAWING) - how each shape is drawn
+const PARTICLE_SHAPES = {
+    circle: (ctx, p) => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+    },
+    star: (ctx, p) => {
+        const spikes = 5, outerR = p.size, innerR = p.size * 0.5;
+        ctx.beginPath();
+        for (let i = 0; i < spikes * 2; i++) {
+            const r = i % 2 === 0 ? outerR : innerR;
+            const angle = (i * Math.PI / spikes) - Math.PI / 2 + (p.rotation || 0);
+            const x = p.x + Math.cos(angle) * r;
+            const y = p.y + Math.sin(angle) * r;
+            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.fill();
+    },
+    diamond: (ctx, p) => {
+        const s = p.size;
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y - s);
+        ctx.lineTo(p.x + s * 0.6, p.y);
+        ctx.lineTo(p.x, p.y + s);
+        ctx.lineTo(p.x - s * 0.6, p.y);
+        ctx.closePath();
+        ctx.fill();
+    },
+    snowflake: (ctx, p) => {
+        const s = p.size, arms = 6;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rotation || 0);
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = ctx.fillStyle;
+        for (let i = 0; i < arms; i++) {
+            ctx.rotate(Math.PI / 3);
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(0, -s);
+            ctx.moveTo(0, -s * 0.5);
+            ctx.lineTo(-s * 0.3, -s * 0.7);
+            ctx.moveTo(0, -s * 0.5);
+            ctx.lineTo(s * 0.3, -s * 0.7);
+            ctx.stroke();
+        }
+        ctx.restore();
+    },
+    rectangle: (ctx, p) => {
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rotation || 0);
+        ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+        ctx.restore();
+    },
+    petal: (ctx, p) => {
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rotation || 0);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, p.size * 0.4, p.size, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    },
+    bell: (ctx, p) => {
+        const s = p.size;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y - s * 0.3, s * 0.7, Math.PI, 0);
+        ctx.quadraticCurveTo(p.x + s * 0.8, p.y + s * 0.5, p.x, p.y + s * 0.6);
+        ctx.quadraticCurveTo(p.x - s * 0.8, p.y + s * 0.5, p.x - s * 0.7, p.y - s * 0.3);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(p.x, p.y + s * 0.7, s * 0.15, 0, Math.PI * 2);
+        ctx.fill();
+    },
+    box: (ctx, p) => {
+        const s = p.size;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rotation || 0);
+        ctx.fillRect(-s / 2, -s / 2, s, s);
+        // Ribbon
+        ctx.fillStyle = '#ffffff';
+        ctx.globalAlpha *= 0.8;
+        ctx.fillRect(-s / 2, -s * 0.1, s, s * 0.2);
+        ctx.fillRect(-s * 0.1, -s / 2, s * 0.2, s);
+        ctx.restore();
+    },
+    candy: (ctx, p) => {
+        const s = p.size;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rotation || 0);
+        // Striped circle
+        ctx.beginPath();
+        ctx.arc(0, 0, s, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        for (let i = 0; i < 3; i++) {
+            ctx.fillRect(-s, -s + i * s * 0.7, s * 2, s * 0.3);
+        }
+        ctx.restore();
+    },
+    bubble: (ctx, p) => {
+        const s = p.size;
+        // Outer bubble
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, s, 0, Math.PI * 2);
+        ctx.globalAlpha *= 0.4;
+        ctx.fill();
+        // Highlight shine
+        ctx.globalAlpha *= 2;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(p.x - s * 0.3, p.y - s * 0.3, s * 0.2, 0, Math.PI * 2);
+        ctx.fill();
+    },
+    leaf: (ctx, p) => {
+        const s = p.size;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rotation || 0);
+        // Leaf shape
+        ctx.beginPath();
+        ctx.moveTo(0, -s);
+        ctx.quadraticCurveTo(s * 0.8, -s * 0.3, 0, s);
+        ctx.quadraticCurveTo(-s * 0.8, -s * 0.3, 0, -s);
+        ctx.fill();
+        // Vein
+        ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(0, -s * 0.8);
+        ctx.lineTo(0, s * 0.8);
+        ctx.stroke();
+        ctx.restore();
+    },
+    note: (ctx, p) => {
+        const s = p.size;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        // Note head (filled oval)
+        ctx.beginPath();
+        ctx.ellipse(0, 0, s * 0.5, s * 0.35, -0.3, 0, Math.PI * 2);
+        ctx.fill();
+        // Stem
+        ctx.fillRect(s * 0.4, -s * 1.2, s * 0.12, s * 1.2);
+        // Flag
+        ctx.beginPath();
+        ctx.moveTo(s * 0.52, -s * 1.2);
+        ctx.quadraticCurveTo(s * 1.2, -s * 0.8, s * 0.52, -s * 0.4);
+        ctx.fill();
+        ctx.restore();
+    },
+    heart: (ctx, p) => {
+        const s = p.size;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.beginPath();
+        ctx.moveTo(0, s * 0.3);
+        // Left curve
+        ctx.bezierCurveTo(-s * 0.5, -s * 0.3, -s, s * 0.1, 0, s);
+        // Right curve
+        ctx.bezierCurveTo(s, s * 0.1, s * 0.5, -s * 0.3, 0, s * 0.3);
+        ctx.fill();
+        ctx.restore();
+    }
+};
+
+function initMouseEffect() {
+    if (mouseEffectInitialized) return;
+    mouseEffectInitialized = true;
+    document.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+    });
+    console.log("✨ Mouse effects system initialized");
+}
+
+function createMouseParticle(x, y, vx, vy, effect) {
+    const config = MOUSE_EFFECTS[effect];
+    if (!config) return null;
+
+    const sizeRange = config.size;
+    const size = sizeRange[0] + Math.random() * (sizeRange[1] - sizeRange[0]);
+
+    // Spawn-mode-specific initial velocities
+    let pVx, pVy;
+    const spread = config.spread;
+    const angle = Math.random() * Math.PI * 2;
+
+    switch (config.spawnMode) {
+        case 'burst': // Explodes outward in all directions
+            pVx = Math.cos(angle) * (2 + Math.random() * 3);
+            pVy = Math.sin(angle) * (2 + Math.random() * 3);
+            break;
+        case 'drop': // Falls gently downward
+            pVx = (Math.random() - 0.5) * spread;
+            pVy = Math.random() * 0.5;
+            break;
+        case 'pop': // Pops upward then falls
+            pVx = (Math.random() - 0.5) * spread;
+            pVy = -2 - Math.random() * 3;
+            break;
+        case 'float': // Drifts slowly in place
+            pVx = (Math.random() - 0.5) * 0.5;
+            pVy = (Math.random() - 0.5) * 0.5;
+            break;
+        case 'follow': // Tight follow - inherits cursor velocity
+            pVx = vx * 0.3 + (Math.random() - 0.5) * spread;
+            pVy = vy * 0.3 + (Math.random() - 0.5) * spread;
+            break;
+        case 'rise': // Floats upward
+            pVx = (Math.random() - 0.5) * spread;
+            pVy = -0.5 - Math.random();
+            break;
+        case 'scatter': // Random directions
+            pVx = (Math.random() - 0.5) * 4;
+            pVy = (Math.random() - 0.5) * 4;
+            break;
+        case 'flutter': // Gentle with horizontal drift
+            pVx = (Math.random() - 0.5) * 2;
+            pVy = Math.random() * 0.5;
+            break;
+        case 'toss': // Thrown upward with arc
+            pVx = (Math.random() - 0.5) * spread + vx * 0.2;
+            pVy = -1.5 - Math.random() * 2;
+            break;
+        case 'bounce': // Bouncy with some upward
+            pVx = (Math.random() - 0.5) * spread;
+            pVy = -1 - Math.random();
+            break;
+        case 'orbit': // Circular motion around spawn
+            pVx = Math.cos(angle) * 2;
+            pVy = Math.sin(angle) * 2;
+            break;
+        case 'spiral': // Spiraling outward
+            pVx = Math.cos(angle) * 1.5;
+            pVy = Math.sin(angle) * 1.5;
+            break;
+        default:
+            pVx = vx + (Math.random() - 0.5) * spread;
+            pVy = vy + (Math.random() - 0.5) * spread;
+    }
+
+    return {
+        x, y,
+        vx: pVx,
+        vy: pVy,
+        alpha: 1,
+        size: size,
+        color: config.colors[Math.floor(Math.random() * config.colors.length)],
+        gravity: config.gravity + (Math.random() - 0.5) * 0.01,
+        decay: config.decay + Math.random() * 0.003,
+        friction: config.friction || 0.98,
+        shape: config.shape,
+        glow: config.glow,
+        twinkle: config.twinkle ? Math.random() * Math.PI * 2 : 0,
+        rotation: config.rotation ? Math.random() * Math.PI * 2 : 0,
+        rotationSpeed: config.spin ? (Math.random() - 0.5) * 0.3 : (config.rotation ? 0.02 : 0),
+        trail: config.hasTrail ? [] : null,
+        trailLength: config.trailLength || 5,
+        wave: config.wave ? Math.random() * Math.PI * 2 : 0,
+        orbitAngle: config.orbit ? angle : null,
+        orbitRadius: config.orbit ? 20 + Math.random() * 30 : 0,
+        originX: x,
+        originY: y,
+        spiralAngle: config.spiral ? angle : null,
+        spiralRadius: config.spiral ? 5 : 0,
+        drift: config.drift ? (Math.random() - 0.5) * 1.5 : 0,
+        flutter: config.flutter ? Math.random() * Math.PI * 2 : 0,
+        sway: config.sway ? Math.random() * Math.PI * 2 : 0,
+        shimmer: config.shimmer ? Math.random() * Math.PI * 2 : 0,
+        pulseGlow: config.pulseGlow || false
+    };
+}
+
+function updateMouseParticles(deltaTime) {
+    const effectType = getSetting("ChristmasTheme.Background.MouseEffect");
+
+    if (!effectType || effectType === "none") {
+        mouseParticles = [];
+        return;
+    }
+
+    if (!mouseEffectInitialized) {
+        initMouseEffect();
+    }
+
+    const config = MOUSE_EFFECTS[effectType];
+    if (!config) return;
+
+    // Calculate mouse velocity
+    const dx = mouseX - lastMouseX;
+    const dy = mouseY - lastMouseY;
+    const speed = Math.sqrt(dx * dx + dy * dy);
+
+    // Spawn particles when mouse moves
+    if (speed > 2) {
+        const particleCount = Math.min(Math.floor(speed / 3), 5);
+        for (let i = 0; i < particleCount; i++) {
+            const t = i / particleCount;
+            const px = lastMouseX + dx * t;
+            const py = lastMouseY + dy * t;
+            const particle = createMouseParticle(px, py, dx * 0.1, dy * 0.1, effectType);
+            if (particle) mouseParticles.push(particle);
+        }
+    }
+
+    lastMouseX = mouseX;
+    lastMouseY = mouseY;
+
+    // Update particles
+    for (let i = mouseParticles.length - 1; i >= 0; i--) {
+        const p = mouseParticles[i];
+
+        // Store trail
+        if (p.trail && p.trail.length < p.trailLength) {
+            p.trail.push({ x: p.x, y: p.y, alpha: p.alpha });
+        }
+
+        // Physics
+        p.vy += p.gravity;
+        p.x += p.vx + (p.drift || 0) * Math.sin(p.flutter || 0);
+        p.y += p.vy;
+        p.vx *= p.friction;
+        p.vy *= p.friction;
+        p.alpha -= p.decay;
+
+        // Effect-specific updates
+        if (p.twinkle) p.twinkle += 0.2;
+        if (p.rotationSpeed) p.rotation += p.rotationSpeed;
+        if (p.wave) { p.wave += 0.1; p.x += Math.sin(p.wave) * 2; }
+        if (p.flutter) p.flutter += 0.15;
+        if (p.sway) { p.sway += 0.1; p.x += Math.sin(p.sway) * 1.5; }
+        if (p.shimmer) p.shimmer += 0.3;
+
+        // Spiral motion - expands outward while spinning
+        if (p.spiralAngle !== null) {
+            p.spiralAngle += 0.15;
+            p.spiralRadius += 0.5;
+            p.x = p.originX + Math.cos(p.spiralAngle) * p.spiralRadius;
+            p.y = p.originY + Math.sin(p.spiralAngle) * p.spiralRadius;
+        }
+
+        // Orbit motion - circles around origin
+        if (p.orbitAngle !== null) {
+            p.orbitAngle += 0.08;
+            p.x = p.originX + Math.cos(p.orbitAngle) * p.orbitRadius;
+            p.y = p.originY + Math.sin(p.orbitAngle) * p.orbitRadius;
+        }
+
+        if (p.alpha <= 0) {
+            mouseParticles.splice(i, 1);
+        }
+    }
+
+    // Performance limit
+    if (mouseParticles.length > 200) {
+        mouseParticles.splice(0, mouseParticles.length - 200);
+    }
+}
+
+function drawMouseParticles(ctx) {
+    const effectType = getSetting("ChristmasTheme.Background.MouseEffect");
+    if (!effectType || effectType === "none" || mouseParticles.length === 0) return;
+
+    ctx.save();
+
+    for (const p of mouseParticles) {
+        // Draw trail
+        if (p.trail && p.trail.length > 0) {
+            for (let t = 0; t < p.trail.length; t++) {
+                const tp = p.trail[t];
+                ctx.globalAlpha = (t / p.trail.length) * p.alpha * 0.4;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(tp.x, tp.y, p.size * 0.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Calculate alpha with effects
+        let finalAlpha = p.alpha;
+        if (p.twinkle) finalAlpha *= (0.7 + Math.sin(p.twinkle) * 0.3);
+        if (p.shimmer) finalAlpha *= (0.8 + Math.sin(p.shimmer) * 0.2);
+
+        // Glow
+        ctx.shadowBlur = p.pulseGlow ? p.glow * (0.7 + Math.sin(p.twinkle || 0) * 0.3) : p.glow;
+        ctx.shadowColor = p.color;
+        ctx.globalAlpha = finalAlpha;
+        ctx.fillStyle = p.color;
+
+        // Draw shape
+        const shapeRenderer = PARTICLE_SHAPES[p.shape] || PARTICLE_SHAPES.circle;
+        shapeRenderer(ctx, p);
+    }
+
+    ctx.shadowBlur = 0;
+    ctx.restore();
+}
 
 // Gradient caching
 let cachedGradient = null;
@@ -1648,6 +2539,16 @@ function drawEnhancedBackground(ctx, width, height) {
         }
     }
 
+    // ✨ Mouse Effects
+    updateMouseParticles(deltaTime);
+    drawMouseParticles(ctx);
+
+    // 🎆 Finale Particles (confetti & stars)
+    if (finaleActive || finaleConfetti.length > 0 || finaleStars.length > 0) {
+        updateFinaleParticles(ctx, canvas);
+        drawFinaleParticles(ctx);
+    }
+
     ctx.restore();
 }
 
@@ -1862,6 +2763,49 @@ app.registerExtension({
         });
 
         app.ui.settings.addSetting({
+            id: "ChristmasTheme.Background.MouseEffect",
+            name: "✨ Mouse Trail Effect",
+            type: "combo",
+            options: [
+                { value: "none", text: "⭘ Off" },
+                { value: "sparkler", text: "✨ Sparkler" },
+                { value: "snowflake", text: "❄️ Snowflake" },
+                { value: "confetti", text: "🎊 Confetti" },
+                { value: "stardust", text: "⭐ Stardust" },
+                { value: "comet", text: "☄️ Comet" },
+                { value: "aurora", text: "🌌 Aurora" },
+                { value: "ribbon", text: "🎀 Ribbon" },
+                { value: "crystal", text: "💎 Crystal" },
+                { value: "petals", text: "🌸 Petals" },
+                { value: "gifts", text: "🎁 Gifts" },
+                { value: "candy", text: "🍬 Candy" },
+                { value: "orb", text: "🔮 Magic Orb" },
+                { value: "magic", text: "✨ Magic Wand" },
+                { value: "nova", text: "🌟 Nova" },
+                { value: "bubbles", text: "💧 Bubbles" },
+                { value: "embers", text: "🔥 Embers" },
+                { value: "lightning", text: "⚡ Lightning" },
+                { value: "leaves", text: "🍂 Leaves" },
+                { value: "wishes", text: "💫 Wishes" },
+                { value: "notes", text: "🎵 Notes" },
+                { value: "hearts", text: "💖 Hearts" }
+            ],
+            defaultValue: "none",
+            section: "Background Theme",
+            tooltip: "Choose a mouse trail effect",
+            onChange: async (value) => {
+                updateCache("ChristmasTheme.Background.MouseEffect", value);
+                if (isInitialSetup) return;
+                if (!value || value === "none") {
+                    mouseParticles = [];
+                }
+                if (app.canvas) {
+                    app.canvas.setDirty(true, true);
+                }
+            }
+        });
+
+        app.ui.settings.addSetting({
             id: "ChristmasTheme.Background.Countdown",
             name: "🎊 New Year Countdown",
             type: "combo",
@@ -1907,6 +2851,7 @@ app.registerExtension({
         loadSettingFromStorage("ChristmasTheme.Background.PartyMode");
         loadSettingFromStorage("ChristmasTheme.Background.ShootingStars");
         loadSettingFromStorage("ChristmasTheme.Background.Fireworks");
+        loadSettingFromStorage("ChristmasTheme.Background.MouseEffect");
         loadSettingFromStorage("ChristmasTheme.Background.Countdown");
         loadSettingFromStorage("ChristmasTheme.Background.ShowFinaleButton");
 

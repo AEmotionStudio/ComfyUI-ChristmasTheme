@@ -10,6 +10,7 @@ const SETTING_DEFAULTS = {
     "ChristmasTheme.ChristmasEffects.Thickness": 3,
     "ChristmasTheme.ChristmasEffects.GlowIntensity": 20,
     "ChristmasTheme.ChristmasEffects.Direction": 1,
+    "ChristmasTheme.ChristmasEffects.BulbShape": "classic",
     "ChristmasTheme.Link Style": "spline",
 
     // Snowflake
@@ -24,6 +25,7 @@ const SETTING_DEFAULTS = {
     "ChristmasTheme.Background.PartyMode": false,
     "ChristmasTheme.Background.ShootingStars": true,
     "ChristmasTheme.Background.Fireworks": false,
+    "ChristmasTheme.Background.MouseEffect": "none",
     "ChristmasTheme.Background.Countdown": false,
     "ChristmasTheme.Background.ShowFinaleButton": false,
 
