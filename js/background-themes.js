@@ -345,7 +345,8 @@ function createCountdownElement() {
 // Finale state
 let finaleActive = false;
 let finaleStartTime = 0;
-const FINALE_DURATION = 15000; // 15 seconds of fireworks
+let finaleGracePeriod = false; // Keeps rendering particles after finale ends
+const FINALE_DURATION = 22000; // 22 seconds of fireworks (extended for smooth wind-down)
 let finaleConfetti = [];
 let finaleRings = [];
 let finaleStars = [];
@@ -622,12 +623,36 @@ function triggerCascadeFireworks() {
     const canvas = document.getElementById('christmas-background');
     if (!canvas) return;
 
-    // Launch 20 fireworks in rapid succession
-    for (let i = 0; i < 20; i++) {
+    // Phase 1: CLIMAX (0-4s) - Rapid-fire intense bursts
+    for (let i = 0; i < 25; i++) {
         setTimeout(() => {
             const x = canvas.width * 0.1 + Math.random() * canvas.width * 0.8;
             fireworkRockets.push(createFireworkRocket(x, canvas.height, true));
-        }, i * 200); // One every 200ms
+        }, i * 160); // Fast pacing
+    }
+
+    // Phase 2: SUSTAINED (4-10s) - Moderate, steady pacing
+    for (let i = 0; i < 15; i++) {
+        setTimeout(() => {
+            const x = canvas.width * 0.15 + Math.random() * canvas.width * 0.7;
+            fireworkRockets.push(createFireworkRocket(x, canvas.height, true));
+        }, 4000 + i * 400); // Medium pacing
+    }
+
+    // Phase 3: WIND-DOWN (10-18s) - Spaced-out bursts that gradually fade
+    for (let i = 0; i < 10; i++) {
+        setTimeout(() => {
+            const x = canvas.width * 0.2 + Math.random() * canvas.width * 0.6;
+            fireworkRockets.push(createFireworkRocket(x, canvas.height, true));
+        }, 10000 + i * 800); // Slow pacing, longer gaps
+    }
+
+    // Phase 4: FINAL TRAILING (18-22s) - Very spaced single bursts
+    for (let i = 0; i < 4; i++) {
+        setTimeout(() => {
+            const x = canvas.width * 0.25 + Math.random() * canvas.width * 0.5;
+            fireworkRockets.push(createFireworkRocket(x, canvas.height, true));
+        }, 18000 + i * 1000); // One per second
     }
 }
 
@@ -2353,29 +2378,40 @@ function drawEnhancedBackground(ctx, width, height) {
         }
     }
 
-    // Fireworks effect (when enabled or during finale)
-    const fireworksEnabled = getSetting("ChristmasTheme.Background.Fireworks") || finaleActive;
+    // Fireworks effect (when enabled, during finale, OR during grace period with existing particles)
+    const hasExistingParticles = fireworkRockets.length > 0 || fireworkParticles.length > 0 || fireworkSparks.length > 0;
+    const fireworksEnabled = getSetting("ChristmasTheme.Background.Fireworks") || finaleActive || (finaleGracePeriod && hasExistingParticles);
     if (fireworksEnabled) {
         // Check if finale is still active
         if (finaleActive && now - finaleStartTime > FINALE_DURATION) {
             finaleActive = false;
-            console.log("🎆 Finale ended");
+            finaleGracePeriod = true; // Enter grace period to let particles fade
+            console.log("🎆 Finale ended, entering grace period");
         }
 
-        // Spawn rate depends on finale state
-        const spawnInterval = finaleActive ? 100 + Math.random() * 150 : 2000 + Math.random() * 2000;
-        if (now - lastFireworkTime > spawnInterval) {
-            const spawnCount = finaleActive ? 2 + Math.floor(Math.random() * 3) : 1;
-            for (let s = 0; s < spawnCount; s++) {
-                const rocket = createFireworkRocket(width, height);
-                // Special golden fireworks during finale (30% chance)
-                if (finaleActive && Math.random() < 0.3) {
-                    rocket.palette = ['#ffd700', '#ffec99', '#fff9db'];
-                    rocket.vy = -14 - Math.random() * 6;
+        // End grace period when all particles have faded
+        if (finaleGracePeriod && !hasExistingParticles) {
+            finaleGracePeriod = false;
+            console.log("🎆 Grace period complete");
+        }
+
+        // Spawn rate depends on finale state - but DON'T spawn during grace period
+        const shouldSpawn = finaleActive || (getSetting("ChristmasTheme.Background.Fireworks") && !finaleGracePeriod);
+        if (shouldSpawn) {
+            const spawnInterval = finaleActive ? 100 + Math.random() * 150 : 2000 + Math.random() * 2000;
+            if (now - lastFireworkTime > spawnInterval) {
+                const spawnCount = finaleActive ? 2 + Math.floor(Math.random() * 3) : 1;
+                for (let s = 0; s < spawnCount; s++) {
+                    const rocket = createFireworkRocket(width, height);
+                    // Special golden fireworks during finale (30% chance)
+                    if (finaleActive && Math.random() < 0.3) {
+                        rocket.palette = ['#ffd700', '#ffec99', '#fff9db'];
+                        rocket.vy = -14 - Math.random() * 6;
+                    }
+                    fireworkRockets.push(rocket);
                 }
-                fireworkRockets.push(rocket);
+                lastFireworkTime = now;
             }
-            lastFireworkTime = now;
         }
 
         // Update and draw rockets with enhanced trails
