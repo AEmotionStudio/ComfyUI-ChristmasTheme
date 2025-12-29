@@ -13,6 +13,9 @@ document.addEventListener('visibilitychange', () => {
     isPageVisible = document.visibilityState === 'visible';
 });
 
+// Workflow execution state - pauses animations during generation
+let isExecuting = false;
+
 // Store original method for cleanup
 let originalDrawBackCanvas = null;
 
@@ -2043,6 +2046,7 @@ function drawOrnateSnowflake(ctx, x, y, size, rotation) {
  */
 function drawEnhancedBackground(ctx, width, height) {
     if (!isPageVisible) return;
+    if (isExecuting) return; // Pause animations during workflow execution
     if (!getSetting("ChristmasTheme.Background.Enabled")) return;
 
     const now = performance.now();
@@ -2679,6 +2683,21 @@ app.registerExtension({
         // Initialize settings cache
         initSettingsCache();
 
+        // Listen for workflow execution to pause animations during generation
+        app.api.addEventListener("execution_start", () => {
+            isExecuting = true;
+        });
+        app.api.addEventListener("execution_cached", () => {
+            // Cached execution also counts as executing
+            isExecuting = true;
+        });
+        app.api.addEventListener("executed", () => {
+            isExecuting = false;
+        });
+        app.api.addEventListener("execution_error", () => {
+            isExecuting = false;
+        });
+
         // Add settings with onChange callbacks to update cache
         app.ui.settings.addSetting({
             id: "ChristmasTheme.Background.Enabled",
@@ -2943,5 +2962,5 @@ app.registerExtension({
     }
 });
 
-// Export visibility state for other modules
-export { isPageVisible };
+// Export visibility and execution state for other modules
+export { isPageVisible, isExecuting };
