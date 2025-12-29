@@ -186,7 +186,10 @@ app.registerExtension({
             options: [
                 { value: "steady", text: "Steady" },
                 { value: "gentle", text: "Gentle Twinkle" },
-                { value: "sparkle", text: "Sparkle" }
+                { value: "sparkle", text: "Sparkle" },
+                { value: "candycane", text: "🍬 Candy Cane" },
+                { value: "frost", text: "❄️ Frost Trail" },
+                { value: "aurora", text: "🌌 Aurora Flow" }
             ],
             defaultValue: "gentle",
             section: "Christmas Effects",
@@ -222,10 +225,10 @@ app.registerExtension({
             name: "🔄 Flow Direction",
             type: "combo",
             options: [
-                { value: 1, text: "Forward ➡️" },
-                { value: -1, text: "Reverse ⬅️" }
+                { value: -1, text: "Forward ➡️" },
+                { value: 1, text: "Reverse ⬅️" }
             ],
-            defaultValue: 1,
+            defaultValue: -1,
             section: "Christmas Effects",
             onChange: (value) => updateCache("ChristmasTheme.ChristmasEffects.Direction", value)
         });
@@ -571,6 +574,118 @@ app.registerExtension({
             // Pre-calculate twinkle function based on mode
             const steadyTwinkle = twinkleMode === "steady";
             const sparkleMode = twinkleMode === "sparkle";
+            const candyCaneMode = twinkleMode === "candycane";
+            const frostMode = twinkleMode === "frost";
+            const auroraMode = twinkleMode === "aurora";
+
+            // Special rendering for new animation modes
+            if (candyCaneMode || frostMode || auroraMode) {
+                for (let itemIdx = 0; itemIdx < items.length; itemIdx++) {
+                    const { start, end, color } = items[itemIdx];
+                    const totalLength = renderer.getLength(start, end);
+
+                    if (candyCaneMode) {
+                        // 🍬 Candy Cane: Animated diagonal stripes
+                        const stripeWidth = 15;
+                        const numSegments = Math.floor(totalLength / 3);
+
+                        for (let i = 0; i <= numSegments; i++) {
+                            const t = i / numSegments;
+                            renderer.getPoint(start, end, t, tempPoint);
+
+                            // Flowing stripe pattern
+                            const stripePhase = (t * totalLength / stripeWidth - phase * 3) % 1;
+                            const isRed = stripePhase < 0.5;
+
+                            ctx.fillStyle = isRed ? '#ff0000' : '#ffffff';
+                            ctx.shadowBlur = isRed ? 8 : 4;
+                            ctx.shadowColor = isRed ? '#ff0000' : '#ffffff';
+                            ctx.globalAlpha = 0.9;
+
+                            ctx.beginPath();
+                            ctx.arc(tempPoint[0], tempPoint[1], Thickness * 1.2, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    } else if (frostMode) {
+                        // ❄️ Frost Trail: Icy crystals with spreading glow
+                        const numCrystals = Math.floor(totalLength / baseSpacing);
+                        const frostColors = ['#e0ffff', '#b0e0e6', '#87ceeb', '#add8e6', '#ffffff'];
+
+                        for (let i = 0; i <= numCrystals; i++) {
+                            const t = i / numCrystals;
+                            renderer.getPoint(start, end, t, tempPoint);
+
+                            // Crystal shimmer effect
+                            const shimmer = 0.6 + fastSin(phase * 4 + i * 2) * 0.4;
+                            const crystalColor = frostColors[i % frostColors.length];
+
+                            // Outer glow
+                            ctx.shadowBlur = 15 * shimmer;
+                            ctx.shadowColor = '#87ceeb';
+                            ctx.fillStyle = crystalColor;
+                            ctx.globalAlpha = shimmer * 0.8;
+
+                            // Draw crystal shape (6-pointed)
+                            const size = Thickness * (1 + shimmer * 0.5);
+                            ctx.beginPath();
+                            for (let p = 0; p < 6; p++) {
+                                const angle = (p / 6) * Math.PI * 2 - Math.PI / 2;
+                                const px = tempPoint[0] + Math.cos(angle) * size;
+                                const py = tempPoint[1] + Math.sin(angle) * size;
+                                if (p === 0) ctx.moveTo(px, py);
+                                else ctx.lineTo(px, py);
+                            }
+                            ctx.closePath();
+                            ctx.fill();
+
+                            // Inner bright core
+                            ctx.beginPath();
+                            ctx.arc(tempPoint[0], tempPoint[1], size * 0.3, 0, Math.PI * 2);
+                            ctx.fillStyle = '#ffffff';
+                            ctx.globalAlpha = shimmer;
+                            ctx.fill();
+                        }
+                    } else if (auroraMode) {
+                        // 🌌 Aurora Flow: Undulating rainbow waves
+                        const numPoints = Math.floor(totalLength / 5);
+                        const auroraColors = ['#00ff88', '#00ffcc', '#00ccff', '#0088ff', '#8800ff', '#ff00ff'];
+
+                        for (let i = 0; i <= numPoints; i++) {
+                            const t = i / numPoints;
+                            renderer.getPoint(start, end, t, tempPoint);
+
+                            // Undulating wave offset
+                            const waveOffset = fastSin(t * Math.PI * 3 + phase * 2) * 8;
+                            const x = tempPoint[0];
+                            const y = tempPoint[1] + waveOffset;
+
+                            // Color cycling through aurora palette
+                            const colorT = (t - phase * 0.5 + 1) % 1;
+                            const colorIndex = Math.floor(colorT * auroraColors.length);
+                            const nextColorIndex = (colorIndex + 1) % auroraColors.length;
+                            const colorBlend = (colorT * auroraColors.length) % 1;
+
+                            // Blend between colors
+                            const auroraColor = auroraColors[colorIndex];
+
+                            // Pulsing intensity
+                            const pulse = 0.5 + fastSin(phase * 3 + t * Math.PI * 2) * 0.5;
+
+                            ctx.shadowBlur = 20 * pulse;
+                            ctx.shadowColor = auroraColor;
+                            ctx.fillStyle = auroraColor;
+                            ctx.globalAlpha = pulse * 0.7;
+
+                            ctx.beginPath();
+                            ctx.arc(x, y, Thickness * (1 + pulse * 0.5), 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                    ctx.globalAlpha = 1;
+                    ctx.shadowBlur = 0;
+                }
+                return; // Skip normal bulb rendering for special modes
+            }
 
             // Icicle bulb helper function
             const drawIcicleBulb = (ctx, x, y, size) => {

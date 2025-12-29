@@ -155,7 +155,7 @@ All settings are accessible via **ComfyUI Settings → Christmas Theme**
 |---------|---------|---------|
 | Christmas Lights | On / Off | On |
 | Color Scheme | Traditional, Warm White, Cool White, Multicolor, Pastel, New Year's Eve | Traditional |
-| Light Effect | Steady, Gentle Twinkle, Sparkle | Gentle Twinkle |
+| Light Effect | Steady, Gentle Twinkle, Sparkle, Candy Cane, Frost Trail, Aurora Flow | Gentle Twinkle |
 | Light Size | 1 - 10 | 3 |
 | Glow Intensity | 0 - 30 | 20 |
 | Flow Direction | Forward / Reverse | Forward |
@@ -170,6 +170,12 @@ All settings are accessible via **ComfyUI Settings → Christmas Theme**
 |---------|---------|---------|
 | Background Effect | On / Off | On |
 | Color Theme | Classic Night, Christmas Forest, Candy Cane Red, Frost Night, Gingerbread, Dark Night | Classic |
+| Shooting Stars | On / Off | On |
+| Background Stars | On / Off | On |
+| Party Mode | On / Off (Rave Stars) | Off |
+| Fireworks | On / Off | Off |
+| Mouse Trail Effect | None, Sparkler, Snowflake, Confetti, Stardust, Comet, Aurora, Ribbon, Crystal, Petals, Gifts, Candy, Magic Orb, Magic Wand, Nova, Bubbles, Embers, Lightning, Leaves, Wishes, Notes, Hearts | None |
+| New Year Countdown | On / Off | Off |
 
 </details>
 
