@@ -76,8 +76,8 @@ Major performance optimizations and bug fixes for a smoother experience:
 
 - Animated light effects along connections
 - **6 color schemes**: Traditional, Warm White, Cool White, Multicolor, Pastel, New Year's Eve
-- **3 animation styles**: Steady, Gentle Twinkle, Sparkle
-- Adjustable size, glow, and flow direction
+- **6 animation styles**: Steady, Gentle Twinkle, Sparkle, Candy Cane, Frost Trail, Aurora Flow
+- Icicle-shaped bulbs with adjustable size and glow
 - Multiple link styles (spline, straight, linear, hidden)
 
 </td>
@@ -86,7 +86,7 @@ Major performance optimizations and bug fixes for a smoother experience:
 ### ❄️ Snowfall Effect
 ![Snowfall Effect](https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme/releases/download/assets/snowfall.gif)
 
-- Smooth CSS-based snowflake animations
+- 8 unique SVG snowflake designs with JS animation
 - **5 color options**: White, Ice Blue, Rainbow, Match Theme, New Year's
 - Adjustable glow intensity
 - GPU-accelerated rendering
@@ -100,7 +100,7 @@ Major performance optimizations and bug fixes for a smoother experience:
 ### 🌌 Dynamic Backgrounds
 ![Background Themes](assets/backgrounds_1.png)
 
-- Animated starry night sky
+- Animated starry night sky with nebula clouds
 - **6 atmospheric themes**:
   - 🌌 Classic Night
   - 🎄 Christmas Forest
@@ -108,6 +108,27 @@ Major performance optimizations and bug fixes for a smoother experience:
   - ❄️ Frost Night
   - 🍪 Gingerbread
   - 🌑 Dark Night
+
+</td>
+<td width="50%">
+
+### ✨ Interactive Mouse Effects
+
+- **22 unique particle effects** with physics simulation
+- Sparklers, Confetti, Stardust, Aurora, and more
+- Each effect has unique friction, gravity, and spawn behaviors
+- Fully GPU-accelerated with object pooling
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+### 🎆 New Year Celebration
+
+- Live countdown timer to midnight
+- Professional fireworks display with 6 explosion types
+- Multi-stage finale triggered at 00:00:00
 
 </td>
 <td width="50%">

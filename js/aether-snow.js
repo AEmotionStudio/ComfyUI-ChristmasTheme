@@ -2,7 +2,7 @@
 // Background snowflakes are rendered via canvas in background-themes.js for proper depth
 import { app } from "../../scripts/app.js";
 import { getSetting, updateCache, loadSettingFromStorage, COLOR_SCHEMES } from "./settings-cache.js";
-import { isPageVisible } from "./background-themes.js";
+import { isPageVisible, isExecuting } from "./background-themes.js";
 
 const SNOWFLAKE_CONFIG = {
     MIN_SIZE: 8,
@@ -313,7 +313,7 @@ app.registerExtension({
             };
 
             const animate = (currentTime) => {
-                if (!isPageVisible) {
+                if (!isPageVisible || isExecuting) {
                     animationId = requestAnimationFrame(animate);
                     return;
                 }
