@@ -9,7 +9,7 @@
 [![License](https://img.shields.io/badge/License-GPLv3-red?style=for-the-badge)](LICENSE)
 [![Version](https://img.shields.io/badge/Version-1.1.0-orange?style=for-the-badge)](https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme/releases)
 
-![ComfyUI Christmas Theme Overview](assets/main-preview.gif)
+![ComfyUI Christmas Theme Overview](https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme/releases/download/assets/main-preview.gif)
 
 *Dynamic backgrounds • Animated snowfall • Festive node connections*
 
@@ -71,7 +71,7 @@ Major performance optimizations and bug fixes for a smoother experience:
 <td width="50%">
 
 ### 🎄 Christmas Node Links
-![Node Link Animations](assets/node-links_2.gif)
+![Node Link Animations](https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme/releases/download/assets/node-links_2.gif)
 
 - Animated light effects along connections
 - **6 color schemes**: Traditional, Warm White, Cool White, Multicolor, Pastel, New Year's Eve
@@ -83,7 +83,7 @@ Major performance optimizations and bug fixes for a smoother experience:
 <td width="50%">
 
 ### ❄️ Snowfall Effect
-![Snowfall Effect](assets/snowfall.gif)
+![Snowfall Effect](https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme/releases/download/assets/snowfall.gif)
 
 - Smooth CSS-based snowflake animations
 - **5 color options**: White, Ice Blue, Rainbow, Match Theme, New Year's

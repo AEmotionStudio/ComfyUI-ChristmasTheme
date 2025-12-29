@@ -264,7 +264,7 @@ function createCountdownElement() {
                 align-items: center;
             }
             #christmas-theme-countdown .countdown-title {
-                font-size: 7px;
+                font-size: 10px;
                 color: #b0b0b0;
                 margin-bottom: 4px;
                 text-transform: uppercase;
