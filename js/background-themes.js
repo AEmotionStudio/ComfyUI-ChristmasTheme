@@ -2874,7 +2874,7 @@ app.registerExtension({
                 { value: true, text: "🕐 On" },
                 { value: false, text: "⭘ Off" }
             ],
-            defaultValue: false,
+            defaultValue: true,
             section: "Background Theme",
             onChange: async (value) => {
                 updateCache("ChristmasTheme.Background.Countdown", value);
