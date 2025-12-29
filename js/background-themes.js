@@ -31,41 +31,199 @@ let lastBgSnowflakeColorScheme = null;
 // Firework entities
 let fireworkRockets = [];
 let fireworkParticles = [];
+let fireworkSparks = []; // Secondary small particles
 let lastFireworkTime = 0;
-const FIREWORK_COLORS = ['#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff', '#ff85c1', '#a855f7', '#00d4ff', '#ffffff'];
 
-// Create a new firework rocket
+// Color palettes for different firework types
+const FIREWORK_PALETTES = [
+    ['#ff6b6b', '#ff8787', '#ffa8a8'], // Red gradient
+    ['#ffd93d', '#ffe066', '#fff3bf'], // Gold gradient
+    ['#6bcb77', '#8ce99a', '#b2f2bb'], // Green gradient
+    ['#4d96ff', '#74c0fc', '#a5d8ff'], // Blue gradient
+    ['#ff85c1', '#f783ac', '#faa2c1'], // Pink gradient
+    ['#a855f7', '#c084fc', '#d8b4fe'], // Purple gradient
+    ['#00d4ff', '#22d3ee', '#67e8f9'], // Cyan gradient
+    ['#ffffff', '#f8f9fa', '#e9ecef'], // White/silver
+    ['#ffd700', '#ffec99', '#fff9db'], // Bright gold
+];
+
+// Explosion types
+const EXPLOSION_TYPES = ['chrysanthemum', 'willow', 'palm', 'ring', 'crackle', 'peony'];
+
+// Create a new firework rocket with enhanced properties
 function createFireworkRocket(width, height) {
+    const palette = FIREWORK_PALETTES[Math.floor(Math.random() * FIREWORK_PALETTES.length)];
+    const explosionType = EXPLOSION_TYPES[Math.floor(Math.random() * EXPLOSION_TYPES.length)];
     return {
         x: Math.random() * width * 0.8 + width * 0.1,
-        y: height - 50, // Start above bottom edge so visible
-        vx: (Math.random() - 0.5) * 2,
-        vy: -10 - Math.random() * 8, // Moderate velocity for mid-screen explosions
-        color: FIREWORK_COLORS[Math.floor(Math.random() * FIREWORK_COLORS.length)],
+        y: height - 30,
+        vx: (Math.random() - 0.5) * 3,
+        vy: -12 - Math.random() * 6,
+        palette: palette,
+        explosionType: explosionType,
         trail: [],
+        trailTimer: 0,
         age: 0,
-        exploded: false
+        exploded: false,
+        size: 2 + Math.random()
     };
 }
 
-// Create explosion particles
-function createExplosionParticles(x, y, color) {
+// Create professional explosion particles based on type
+function createExplosionParticles(x, y, palette, explosionType) {
     const particles = [];
-    const count = 40 + Math.floor(Math.random() * 30);
-    for (let i = 0; i < count; i++) {
-        const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.3;
-        const speed = 2 + Math.random() * 4;
-        particles.push({
-            x: x,
-            y: y,
+    const primaryColor = palette[0];
+    const secondaryColor = palette[1];
+    const tertiaryColor = palette[2];
+
+    switch (explosionType) {
+        case 'chrysanthemum': {
+            // Dense spherical burst with long trails
+            const count = 80 + Math.floor(Math.random() * 40);
+            for (let i = 0; i < count; i++) {
+                const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.2;
+                const speed = 3 + Math.random() * 3;
+                const colorChoice = Math.random();
+                particles.push({
+                    x, y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    color: colorChoice < 0.5 ? primaryColor : (colorChoice < 0.8 ? secondaryColor : tertiaryColor),
+                    alpha: 1,
+                    size: 2 + Math.random() * 1.5,
+                    decay: 0.008 + Math.random() * 0.004,
+                    trail: [],
+                    hasTrail: true,
+                    gravity: 0.03
+                });
+            }
+            break;
+        }
+        case 'willow': {
+            // Drooping trails like a willow tree
+            const count = 60 + Math.floor(Math.random() * 30);
+            for (let i = 0; i < count; i++) {
+                const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.15;
+                const speed = 2 + Math.random() * 2;
+                particles.push({
+                    x, y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed - 1,
+                    color: palette[Math.floor(Math.random() * palette.length)],
+                    alpha: 1,
+                    size: 1.5 + Math.random(),
+                    decay: 0.005 + Math.random() * 0.003,
+                    trail: [],
+                    hasTrail: true,
+                    gravity: 0.08 // Heavy gravity for drooping effect
+                });
+            }
+            break;
+        }
+        case 'palm': {
+            // Thick center burst spreading outward
+            const count = 50 + Math.floor(Math.random() * 20);
+            for (let i = 0; i < count; i++) {
+                const angle = (Math.PI * 2 * i) / count;
+                const speed = 4 + Math.random() * 2;
+                particles.push({
+                    x, y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed - 2,
+                    color: primaryColor,
+                    alpha: 1,
+                    size: 3 + Math.random() * 2,
+                    decay: 0.012 + Math.random() * 0.005,
+                    trail: [],
+                    hasTrail: true,
+                    gravity: 0.04
+                });
+            }
+            break;
+        }
+        case 'ring': {
+            // Expanding ring shape
+            const count = 40;
+            for (let i = 0; i < count; i++) {
+                const angle = (Math.PI * 2 * i) / count;
+                const speed = 4;
+                particles.push({
+                    x, y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    color: palette[i % palette.length],
+                    alpha: 1,
+                    size: 2.5,
+                    decay: 0.015,
+                    trail: [],
+                    hasTrail: false,
+                    gravity: 0.02
+                });
+            }
+            break;
+        }
+        case 'crackle': {
+            // Initial burst then secondary mini explosions
+            const count = 30;
+            for (let i = 0; i < count; i++) {
+                const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.3;
+                const speed = 2 + Math.random() * 2;
+                particles.push({
+                    x, y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    color: primaryColor,
+                    alpha: 1,
+                    size: 2 + Math.random(),
+                    decay: 0.02,
+                    trail: [],
+                    hasTrail: true,
+                    gravity: 0.05,
+                    crackle: true,
+                    crackleTime: 0.3 + Math.random() * 0.3
+                });
+            }
+            break;
+        }
+        case 'peony':
+        default: {
+            // Classic spherical burst
+            const count = 70 + Math.floor(Math.random() * 30);
+            for (let i = 0; i < count; i++) {
+                const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.25;
+                const speed = 2.5 + Math.random() * 2.5;
+                particles.push({
+                    x, y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    color: palette[Math.floor(Math.random() * palette.length)],
+                    alpha: 1,
+                    size: 2 + Math.random() * 1.5,
+                    decay: 0.01 + Math.random() * 0.005,
+                    trail: [],
+                    hasTrail: Math.random() > 0.3,
+                    gravity: 0.04
+                });
+            }
+        }
+    }
+
+    // Add glitter/sparks for all types
+    const sparkCount = 20 + Math.floor(Math.random() * 15);
+    for (let i = 0; i < sparkCount; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 1 + Math.random() * 5;
+        fireworkSparks.push({
+            x, y,
             vx: Math.cos(angle) * speed,
             vy: Math.sin(angle) * speed,
-            color: color,
             alpha: 1,
-            size: 1 + Math.random() * 2,
-            decay: 0.015 + Math.random() * 0.01
+            size: 0.5 + Math.random() * 0.5,
+            decay: 0.03 + Math.random() * 0.02,
+            twinkle: Math.random() * Math.PI * 2
         });
     }
+
     return particles;
 }
 
@@ -90,57 +248,93 @@ function createCountdownElement() {
             #christmas-theme-countdown {
                 position: fixed;
                 bottom: 4px;
-                right: 260px; /* Offset from right corner to sit next to menu */
-                background: linear-gradient(135deg, rgba(30, 30, 60, 0.85), rgba(60, 30, 80, 0.85));
-                border: 1px solid #ffd700;
+                right: 260px;
+                background: rgba(35, 35, 35, 0.95);
+                border: 1px solid rgba(80, 80, 80, 0.8);
                 border-radius: 6px;
                 padding: 7px 12px;
-                font-family: 'Segoe UI', Tahoma, sans-serif;
-                color: #fff;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                color: #e0e0e0;
                 z-index: 9999;
                 pointer-events: none;
-                box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
                 text-align: center;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
             }
             #christmas-theme-countdown .countdown-title {
                 font-size: 7px;
-                color: #ffd700;
-                margin-bottom: 1px;
+                color: #b0b0b0;
+                margin-bottom: 4px;
                 text-transform: uppercase;
                 letter-spacing: 1px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 4px;
+                width: 100%;
             }
-            #christmas-theme-countdown .countdown-time {
+            #christmas-theme-countdown .countdown-title svg {
+                width: 10px;
+                height: 10px;
+                fill: none;
+                stroke: #ffd700;
+                stroke-width: 2;
+                stroke-linecap: round;
+            }
+            #christmas-theme-countdown .countdown-grid {
+                display: flex;
+                align-items: flex-start;
+                gap: 2px;
+            }
+            #christmas-theme-countdown .countdown-segment {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                min-width: 22px;
+            }
+            #christmas-theme-countdown .countdown-segment span:first-child {
                 font-size: 14px;
-                font-weight: bold;
-                color: #fff;
-                text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+                font-weight: 600;
+                color: #ffffff;
                 font-variant-numeric: tabular-nums;
                 line-height: 1.1;
             }
-            #christmas-theme-countdown .countdown-labels {
+            #christmas-theme-countdown .countdown-segment .label {
                 font-size: 6px;
-                color: #aaa;
-                margin-top: 2px;
+                color: #888;
+                margin-top: 1px;
             }
-            #christmas-theme-countdown .countdown-labels span {
-                display: inline-block;
-                width: 28px;
-                text-align: center;
+            #christmas-theme-countdown .countdown-sep {
+                font-size: 14px;
+                font-weight: 600;
+                color: #666;
+                line-height: 1.1;
             }
             #christmas-theme-countdown.celebration {
                 animation: celebrate 0.3s ease-in-out infinite;
-                border-color: #ff6b6b;
-                box-shadow: 0 0 25px rgba(255, 107, 107, 0.6);
+                border-color: #ffd700;
+                box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
             }
             @keyframes celebrate {
                 0%, 100% { transform: scale(1); }
                 50% { transform: scale(1.1); }
             }
         </style>
-        <div class="countdown-title">🎆 New Year 2026 🎆</div>
-        <div class="countdown-time" id="countdown-display">00:00:00:00</div>
-        <div class="countdown-labels">
-            <span>Days</span><span>Hrs</span><span>Min</span><span>Sec</span>
+        <div class="countdown-title">
+            <svg viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.64 5.64l2.83 2.83M15.54 15.54l2.83 2.83M5.64 18.36l2.83-2.83M15.54 8.46l2.83-2.83"/><circle cx="12" cy="12" r="2"/></svg>
+            New Year 2026
+            <svg viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.64 5.64l2.83 2.83M15.54 15.54l2.83 2.83M5.64 18.36l2.83-2.83M15.54 8.46l2.83-2.83"/><circle cx="12" cy="12" r="2"/></svg>
+        </div>
+        <div class="countdown-grid">
+            <div class="countdown-segment"><span id="countdown-days">00</span><span class="label">Days</span></div>
+            <div class="countdown-sep">:</div>
+            <div class="countdown-segment"><span id="countdown-hours">00</span><span class="label">Hrs</span></div>
+            <div class="countdown-sep">:</div>
+            <div class="countdown-segment"><span id="countdown-mins">00</span><span class="label">Min</span></div>
+            <div class="countdown-sep">:</div>
+            <div class="countdown-segment"><span id="countdown-secs">00</span><span class="label">Sec</span></div>
         </div>
     `;
     document.body.appendChild(container);
@@ -161,8 +355,11 @@ function triggerFinale() {
 }
 
 function updateCountdown() {
-    const display = document.getElementById('countdown-display');
-    if (!display) return;
+    const daysEl = document.getElementById('countdown-days');
+    const hoursEl = document.getElementById('countdown-hours');
+    const minsEl = document.getElementById('countdown-mins');
+    const secsEl = document.getElementById('countdown-secs');
+    if (!daysEl || !hoursEl || !minsEl || !secsEl) return;
 
     const now = new Date();
     let targetYear = now.getFullYear();
@@ -174,14 +371,15 @@ function updateCountdown() {
     const diff = newYear - now;
 
     if (diff <= 0) {
-        display.textContent = '🎉 Happy New Year! 🎉';
+        daysEl.textContent = '00';
+        hoursEl.textContent = '00';
+        minsEl.textContent = '00';
+        secsEl.textContent = '00';
         if (countdownElement) {
             countdownElement.classList.add('celebration');
         }
-        // Trigger finale only once
-        if (!finaleActive) {
-            triggerFinale();
-        }
+        // Show finale button instead of auto-triggering (easter egg)
+        showFinaleButton();
         return;
     }
 
@@ -190,7 +388,15 @@ function updateCountdown() {
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-    display.textContent = `${days.toString().padStart(2, '0')}:${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    daysEl.textContent = days.toString().padStart(2, '0');
+    hoursEl.textContent = hours.toString().padStart(2, '0');
+    minsEl.textContent = minutes.toString().padStart(2, '0');
+    secsEl.textContent = seconds.toString().padStart(2, '0');
+
+    // Hide finale button if time is not zero AND setting is off
+    if (!getSetting("ChristmasTheme.Background.ShowFinaleButton")) {
+        hideFinaleButton();
+    }
 }
 
 function toggleCountdownDisplay(enabled) {
@@ -201,8 +407,10 @@ function toggleCountdownDisplay(enabled) {
         if (!countdownInterval) {
             countdownInterval = setInterval(updateCountdown, 1000);
         }
-        // Add dev toggle button for testing finale
-        createDevToggle();
+        // Show finale button if setting enabled
+        if (getSetting("ChristmasTheme.Background.ShowFinaleButton")) {
+            showFinaleButton();
+        }
     } else {
         if (countdownElement) {
             countdownElement.style.display = 'none';
@@ -211,44 +419,68 @@ function toggleCountdownDisplay(enabled) {
             clearInterval(countdownInterval);
             countdownInterval = null;
         }
-        removeDevToggle();
+        hideFinaleButton();
     }
 }
 
-// Dev toggle for testing finale
-let devToggleElement = null;
-function createDevToggle() {
-    if (devToggleElement) return;
+// Finale button (appears at midnight as easter egg)
+let finaleButtonElement = null;
+let finaleButtonShown = false;
+
+function showFinaleButton() {
+    if (finaleButtonShown || finaleActive) return;
+    finaleButtonShown = true;
+
+    if (finaleButtonElement) {
+        finaleButtonElement.style.display = 'block';
+        return;
+    }
+
     const btn = document.createElement('button');
-    btn.id = 'finale-dev-toggle';
-    btn.textContent = '🎆 Test Finale';
+    btn.id = 'finale-trigger-btn';
+    btn.innerHTML = `Happy New Year!`;
     btn.style.cssText = `
         position: fixed;
-        bottom: 60px;
-        right: 260px;
-        padding: 8px 16px;
-        background: linear-gradient(135deg, #ff6b6b, #ffd93d);
-        border: none;
-        border-radius: 8px;
-        color: #000;
-        font-weight: bold;
+        bottom: 59px;
+        right: 273px;
+        padding: 6px 12px;
+        background: rgba(35, 35, 35, 0.95);
+        border: 1px solid #ffd700;
+        border-radius: 6px;
+        color: #ffd700;
+        font-weight: 600;
         cursor: pointer;
         z-index: 10000;
-        font-size: 12px;
+        font-size: 11px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
     `;
+    btn.onmouseenter = () => {
+        btn.style.background = 'rgba(50, 50, 50, 0.95)';
+        btn.style.boxShadow = '0 0 15px rgba(255, 215, 0, 0.4)';
+    };
+    btn.onmouseleave = () => {
+        btn.style.background = 'rgba(35, 35, 35, 0.95)';
+        btn.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
+    };
     btn.onclick = () => {
-        finaleActive = false; // Reset so it can trigger again
+        finaleActive = false; // Reset so it triggers fresh
         triggerFinale();
     };
     document.body.appendChild(btn);
-    devToggleElement = btn;
+    finaleButtonElement = btn;
 }
-function removeDevToggle() {
-    if (devToggleElement) {
-        devToggleElement.remove();
-        devToggleElement = null;
+
+function hideFinaleButton() {
+    finaleButtonShown = false;
+    if (finaleButtonElement) {
+        finaleButtonElement.style.display = 'none';
     }
 }
+
 
 // Gradient caching
 let cachedGradient = null;
@@ -1242,103 +1474,178 @@ function drawEnhancedBackground(ctx, width, height) {
         // Spawn rate depends on finale state
         const spawnInterval = finaleActive ? 100 + Math.random() * 150 : 2000 + Math.random() * 2000;
         if (now - lastFireworkTime > spawnInterval) {
-            // During finale, spawn multiple at once with special effects
             const spawnCount = finaleActive ? 2 + Math.floor(Math.random() * 3) : 1;
             for (let s = 0; s < spawnCount; s++) {
                 const rocket = createFireworkRocket(width, height);
                 // Special golden fireworks during finale (30% chance)
                 if (finaleActive && Math.random() < 0.3) {
-                    rocket.color = '#ffd700';
-                    rocket.vy = -10 - Math.random() * 5; // Higher launch
+                    rocket.palette = ['#ffd700', '#ffec99', '#fff9db'];
+                    rocket.vy = -14 - Math.random() * 6;
                 }
                 fireworkRockets.push(rocket);
             }
             lastFireworkTime = now;
         }
 
-        // Update and draw rockets
+        // Update and draw rockets with enhanced trails
         for (let i = fireworkRockets.length - 1; i >= 0; i--) {
             const rocket = fireworkRockets[i];
 
-            // Apply gravity and update position
-            rocket.vy += 0.15; // Gravity
+            // Apply gravity
+            rocket.vy += 0.12;
             rocket.x += rocket.vx;
             rocket.y += rocket.vy;
             rocket.age += deltaTime;
+            rocket.trailTimer += deltaTime;
 
-            // Add trail point
-            rocket.trail.push({ x: rocket.x, y: rocket.y, alpha: 1 });
-            if (rocket.trail.length > 10) rocket.trail.shift();
+            // Add trail points more frequently
+            if (rocket.trailTimer > 0.02) {
+                rocket.trail.push({ x: rocket.x, y: rocket.y, alpha: 1, size: rocket.size });
+                rocket.trailTimer = 0;
+            }
+            // Keep more trail points for longer trails
+            if (rocket.trail.length > 20) rocket.trail.shift();
 
-            // Explode when velocity slows (near peak)
-            if (rocket.vy > -1 && !rocket.exploded) {
+            // Explode when velocity slows
+            if (rocket.vy > -2 && !rocket.exploded) {
                 rocket.exploded = true;
-                fireworkParticles.push(...createExplosionParticles(rocket.x, rocket.y, rocket.color));
+                fireworkParticles.push(...createExplosionParticles(rocket.x, rocket.y, rocket.palette, rocket.explosionType));
                 fireworkRockets.splice(i, 1);
                 continue;
             }
 
-            // Remove if too old
             if (rocket.age > 5) {
                 fireworkRockets.splice(i, 1);
                 continue;
             }
 
-            // Draw rocket trail
-            ctx.strokeStyle = rocket.color;
-            ctx.lineWidth = 2;
-            ctx.globalAlpha = 0.8;
-            ctx.beginPath();
+            // Draw enhanced rocket trail with gradient
+            const primaryColor = rocket.palette[0];
             for (let j = 0; j < rocket.trail.length; j++) {
                 const point = rocket.trail[j];
-                ctx.globalAlpha = (j / rocket.trail.length) * 0.6;
-                if (j === 0) {
-                    ctx.moveTo(point.x, point.y);
-                } else {
-                    ctx.lineTo(point.x, point.y);
-                }
-            }
-            ctx.stroke();
+                const progress = j / rocket.trail.length;
+                const alpha = progress * 0.8;
+                const size = point.size * progress * 0.8;
 
-            // Draw rocket head
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = primaryColor;
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Draw rocket head with bright glow
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = primaryColor;
             ctx.fillStyle = '#ffffff';
-            ctx.shadowBlur = 8;
-            ctx.shadowColor = rocket.color;
             ctx.globalAlpha = 1;
             ctx.beginPath();
-            ctx.arc(rocket.x, rocket.y, 3, 0, Math.PI * 2);
+            ctx.arc(rocket.x, rocket.y, rocket.size + 1, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Inner bright core
+            ctx.fillStyle = primaryColor;
+            ctx.beginPath();
+            ctx.arc(rocket.x, rocket.y, rocket.size * 0.6, 0, Math.PI * 2);
             ctx.fill();
             ctx.shadowBlur = 0;
         }
 
-        // Update and draw explosion particles
+        // Update and draw explosion particles with trails
         for (let i = fireworkParticles.length - 1; i >= 0; i--) {
             const p = fireworkParticles[i];
 
+            // Store trail before updating position
+            if (p.hasTrail && p.trail) {
+                p.trail.push({ x: p.x, y: p.y, alpha: p.alpha });
+                if (p.trail.length > 8) p.trail.shift();
+            }
+
             // Apply physics
-            p.vy += 0.05; // Light gravity
+            p.vy += p.gravity || 0.04;
             p.x += p.vx;
             p.y += p.vy;
-            p.vx *= 0.98; // Friction
-            p.vy *= 0.98;
+            p.vx *= 0.985;
+            p.vy *= 0.985;
             p.alpha -= p.decay;
 
-            // Remove faded particles
+            // Handle crackle effect
+            if (p.crackle && p.crackleTime !== undefined) {
+                p.crackleTime -= deltaTime;
+                if (p.crackleTime <= 0 && p.alpha > 0.3) {
+                    // Create mini explosion
+                    for (let c = 0; c < 5; c++) {
+                        const angle = Math.random() * Math.PI * 2;
+                        const speed = 1 + Math.random() * 2;
+                        fireworkSparks.push({
+                            x: p.x, y: p.y,
+                            vx: Math.cos(angle) * speed,
+                            vy: Math.sin(angle) * speed,
+                            alpha: 0.8,
+                            size: 0.8,
+                            decay: 0.05,
+                            twinkle: Math.random() * Math.PI * 2
+                        });
+                    }
+                    p.crackle = false;
+                }
+            }
+
+            // Remove faded
             if (p.alpha <= 0) {
                 fireworkParticles.splice(i, 1);
                 continue;
             }
 
-            // Draw particle with glow
-            ctx.fillStyle = p.color;
-            ctx.shadowBlur = 4;
+            // Draw particle trail first (behind main particle)
+            if (p.hasTrail && p.trail && p.trail.length > 0) {
+                for (let t = 0; t < p.trail.length; t++) {
+                    const tp = p.trail[t];
+                    const trailAlpha = (t / p.trail.length) * p.alpha * 0.5;
+                    const trailSize = p.size * (t / p.trail.length) * 0.7;
+                    ctx.globalAlpha = trailAlpha;
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(tp.x, tp.y, trailSize, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            // Draw main particle with glow
+            ctx.shadowBlur = 8;
             ctx.shadowColor = p.color;
+            ctx.fillStyle = p.color;
             ctx.globalAlpha = p.alpha;
             ctx.beginPath();
             ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
             ctx.fill();
+            ctx.shadowBlur = 0;
         }
-        ctx.shadowBlur = 0;
+
+        // Update and draw sparks/glitter
+        for (let i = fireworkSparks.length - 1; i >= 0; i--) {
+            const s = fireworkSparks[i];
+
+            s.vy += 0.03;
+            s.x += s.vx;
+            s.y += s.vy;
+            s.alpha -= s.decay;
+            s.twinkle += 0.3;
+
+            if (s.alpha <= 0) {
+                fireworkSparks.splice(i, 1);
+                continue;
+            }
+
+            // Twinkle effect
+            const twinkleAlpha = s.alpha * (0.5 + Math.sin(s.twinkle) * 0.5);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.globalAlpha = twinkleAlpha;
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
     }
 
     ctx.restore();
@@ -1571,6 +1878,28 @@ app.registerExtension({
             }
         });
 
+        app.ui.settings.addSetting({
+            id: "ChristmasTheme.Background.ShowFinaleButton",
+            name: "🎆 Show Finale Button",
+            tooltip: "Turn on if you don't like surprises or wait till 00:00:00 for the show!",
+            type: "combo",
+            options: [
+                { value: true, text: "🎇 Show" },
+                { value: false, text: "🎁 Surprise" }
+            ],
+            defaultValue: false,
+            section: "Background Theme",
+            onChange: async (value) => {
+                updateCache("ChristmasTheme.Background.ShowFinaleButton", value);
+                if (isInitialSetup) return;
+                if (value && getSetting("ChristmasTheme.Background.Countdown")) {
+                    showFinaleButton();
+                } else {
+                    hideFinaleButton();
+                }
+            }
+        });
+
         // Load stored values AFTER settings are registered
         loadSettingFromStorage("ChristmasTheme.Background.Enabled");
         loadSettingFromStorage("ChristmasTheme.Background.ColorTheme");
@@ -1579,6 +1908,7 @@ app.registerExtension({
         loadSettingFromStorage("ChristmasTheme.Background.ShootingStars");
         loadSettingFromStorage("ChristmasTheme.Background.Fireworks");
         loadSettingFromStorage("ChristmasTheme.Background.Countdown");
+        loadSettingFromStorage("ChristmasTheme.Background.ShowFinaleButton");
 
         // Mark initial setup complete
         isInitialSetup = false;

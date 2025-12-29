@@ -25,6 +25,7 @@ const SETTING_DEFAULTS = {
     "ChristmasTheme.Background.ShootingStars": true,
     "ChristmasTheme.Background.Fireworks": false,
     "ChristmasTheme.Background.Countdown": false,
+    "ChristmasTheme.Background.ShowFinaleButton": false,
 
     // Performance
     "ChristmasTheme.PauseDuringRender": true
