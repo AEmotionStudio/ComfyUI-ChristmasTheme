@@ -11,7 +11,7 @@
 
 ![ComfyUI Christmas Theme Overview](https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme/releases/download/assets/main-preview.gif)
 
-*Dynamic backgrounds • Animated snowfall • Festive node connections*
+*Dynamic backgrounds • Animated snowfall • Festive node connections • Interactive mouse effects*
 
 </div>
 
@@ -238,7 +238,7 @@ If you'd like to support development financially:
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/aemotionstudio)
 
-Your support helps dedicate more time to maintaining and improving this project, developing new features, and creating better documentation and tutorials.
+Your support helps dedicate more time to maintaining and improving this project and other projects, developing new features, and creating better documentation and tutorials.
 
 ---
 
