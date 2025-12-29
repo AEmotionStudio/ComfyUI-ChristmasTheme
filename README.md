@@ -137,11 +137,6 @@ cd ComfyUI/custom_nodes
 git clone https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme
 ```
 
-### Option 3: Manual Download
-Download the [latest release](https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme/releases) and extract to `ComfyUI/custom_nodes/`
-
-After installation, **restart ComfyUI** to load the extension.
-
 ---
 
 ## ⚙️ Settings
@@ -232,7 +227,14 @@ Contributions are welcome! Whether it's bug reports, feature suggestions, or pul
 -   Website: [aemotionstudio.org](https://aemotionstudio.org/)
 
 ## ☕ Support
-If you find this project useful and wish to support its development, consider:
+If you find this project useful, here are some ways to show your support:
+
+- ⭐ **Star this repo** — It helps others discover the project!
+- 📢 **Share it** — Tell your friends, post on social media, or write about it
+- 🐛 **Report bugs** — Found an issue? Let us know!
+- 💡 **Suggest features** — Ideas are always welcome
+
+If you'd like to support development financially:
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/aemotionstudio)
 
