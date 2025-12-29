@@ -26,6 +26,7 @@ A massive update introducing a physics-based particle engine, interactive effect
 | New Feature | Description |
 |-------------|-------------|
 | ✨ **22 Mouse Effects** | Physics-based particle system with 22 unique interactive trails including Sparklers, Confetti, and Magic Wands. |
+| 🔗 **3 New Link Effects** | Candy Cane stripes, icy Frost Trail, and flowing Aurora animations for node connections, plus new icicle-shaped bulbs. |
 | 🎊 **Live Countdown** | Dynamic timer that auto-targets the New Year with a pulsing "Celebration Mode" anticipation phase. |
 | 🤫 **Surprise Finale** | A spectacular, multi-stage 6-layer coordinated show triggered exactly at midnight. *No spoilers!* |
 | 🪩 **Rave Mode** | "Party Mode" setting that transforms background stars into a strobing disco light show. |
