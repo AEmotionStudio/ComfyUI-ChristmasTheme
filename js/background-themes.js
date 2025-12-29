@@ -2441,7 +2441,28 @@ function drawEnhancedBackground(ctx, width, height) {
                 continue;
             }
 
-            if (rocket.age > 5) {
+            // Force explode if rocket is too old (simplified explosion for performance)
+            if (rocket.age > 5 && !rocket.exploded) {
+                rocket.exploded = true;
+                // Create a simpler explosion with fewer particles for forced timeouts
+                const simpleCount = 15 + Math.floor(Math.random() * 10); // 15-25 particles vs 50-120 normal
+                for (let i = 0; i < simpleCount; i++) {
+                    const angle = (Math.PI * 2 * i) / simpleCount;
+                    const speed = 2 + Math.random() * 2;
+                    fireworkParticles.push({
+                        x: rocket.x,
+                        y: rocket.y,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed,
+                        color: rocket.palette[Math.floor(Math.random() * rocket.palette.length)],
+                        alpha: 1,
+                        size: 1.5 + Math.random(),
+                        decay: 0.025, // Faster fade than normal
+                        trail: [],
+                        hasTrail: false, // No trails for performance
+                        gravity: 0.05
+                    });
+                }
                 fireworkRockets.splice(i, 1);
                 continue;
             }

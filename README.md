@@ -231,7 +231,7 @@ If you find this project useful, here are some ways to show your support:
 
 - ⭐ **Star this repo** — It helps others discover the project!
 - 📢 **Share it** — Tell your friends, post on social media, or write about it
-- 🐛 **Report bugs** — Found an issue? Let us know!
+- 🐛 **Report bugs** — Found an issue? Let me know!
 - 💡 **Suggest features** — Ideas are always welcome
 
 If you'd like to support development financially:
