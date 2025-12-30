@@ -44,10 +44,6 @@ Fully modular physics system with unique friction, gravity, and spawn behaviors:
 | ⚡ **Lightning** | 🍂 **Leaves** | 💫 **Wishes** | 🎵 **Notes** |
 | 💖 **Hearts** | | | |
 
-<p align="center">
-  <img src="https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme/releases/download/assets/interactive_mouse_effects.webp" alt="Interactive Mouse Effects" width="600"/>
-</p>
-
 ---
 
 ## 📢 Previous Update — December 25, 2025
@@ -117,6 +113,7 @@ Major performance optimizations and bug fixes for a smoother experience:
 <td width="50%">
 
 ### ✨ Interactive Mouse Effects
+![Interactive Mouse Effects](https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme/releases/download/assets/interactive_mouse_effects.webp)
 
 - **22 unique particle effects** with physics simulation
 - Sparklers, Confetti, Stardust, Aurora, and more
