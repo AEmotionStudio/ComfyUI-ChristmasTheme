@@ -9,7 +9,7 @@
 [![License](https://img.shields.io/badge/License-GPLv3-red?style=for-the-badge)](LICENSE)
 [![Version](https://img.shields.io/badge/Version-1.2.0-orange?style=for-the-badge)](https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme/releases)
 
-![ComfyUI Christmas Theme Overview](https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme/releases/download/assets/main-preview.gif)
+![ComfyUI Christmas Theme Overview](https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme/releases/download/assets/main-preview.webp)
 
 *Dynamic backgrounds • Animated snowfall • Festive node connections • Interactive mouse effects*
 
@@ -17,7 +17,7 @@
 
 ---
 
-## 📢 Latest Update — December 28-29, 2025
+## 📢 Latest Update — December 30, 2025
 
 ### 🎉 New Year's Live Celebration v1.2.0
 
