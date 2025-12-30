@@ -253,8 +253,8 @@ function createCountdownElement() {
                 position: fixed;
                 bottom: 4px;
                 right: 260px;
-                background: rgba(35, 35, 35, 0.95);
-                border: 1px solid rgba(80, 80, 80, 0.8);
+                background: #121212;
+                border: 1px solid #2a2a2a;
                 border-radius: 6px;
                 padding: 7px 12px;
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -295,6 +295,7 @@ function createCountdownElement() {
                 display: flex;
                 align-items: flex-start;
                 gap: 2px;
+                margin-left: 5px;
             }
             #christmas-theme-countdown .countdown-segment {
                 display: flex;
@@ -310,8 +311,8 @@ function createCountdownElement() {
                 line-height: 1.1;
             }
             #christmas-theme-countdown .countdown-segment .label {
-                font-size: 6px;
-                color: #888;
+                font-size: 8px;
+                color: #aaa;
                 margin-top: 1px;
             }
             #christmas-theme-countdown .countdown-sep {
