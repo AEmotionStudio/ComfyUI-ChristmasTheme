@@ -85,7 +85,7 @@ Major performance optimizations and bug fixes for a smoother experience:
 <td width="50%">
 
 ### ❄️ Snowfall Effect
-![Snowfall Effect](https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme/releases/download/assets/snowfall.gif)
+![Snowfall Effect](https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme/releases/download/assets/snow-flakes.webp)
 
 - 8 unique SVG snowflake designs with JS animation
 - **5 color options**: White, Ice Blue, Rainbow, Match Theme, New Year's
