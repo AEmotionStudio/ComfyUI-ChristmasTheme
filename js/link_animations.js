@@ -230,6 +230,7 @@ app.registerExtension({
             ],
             defaultValue: -1,
             section: "Christmas Effects",
+            tooltip: "If not animating properly, refresh the page",
             onChange: (value) => updateCache("ChristmasTheme.ChristmasEffects.Direction", value)
         });
 
@@ -547,8 +548,12 @@ app.registerExtension({
             sinTable[i] = Math.sin((i / SIN_TABLE_SIZE) * Math.PI * 2);
         }
         function fastSin(x) {
-            const idx = ((x % (Math.PI * 2)) / (Math.PI * 2) * SIN_TABLE_SIZE) | 0;
-            return sinTable[(idx + SIN_TABLE_SIZE) % SIN_TABLE_SIZE];
+            // Normalize x to [0, 2π) range to handle negative values correctly
+            const TWO_PI = Math.PI * 2;
+            let normalized = x % TWO_PI;
+            if (normalized < 0) normalized += TWO_PI;
+            const idx = Math.floor((normalized / TWO_PI) * SIN_TABLE_SIZE);
+            return sinTable[idx % SIN_TABLE_SIZE];
         }
 
         // 🎄 Optimized Christmas Lights Pattern

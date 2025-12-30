@@ -133,6 +133,7 @@ const SETTINGS_CONFIG = {
                 id: "ChristmasTheme.ChristmasEffects.Direction",
                 label: "🔄 Flow Direction",
                 type: "select",
+                tooltip: "If not animating properly, refresh the page",
                 options: [
                     { value: -1, text: "Forward ➡️" },
                     { value: 1, text: "Reverse ⬅️" }
@@ -449,6 +450,11 @@ function createToggle(settingConfig) {
 function createSelect(settingConfig) {
     const select = document.createElement('select');
     select.className = 'christmas-select';
+
+    // Add tooltip if defined
+    if (settingConfig.tooltip) {
+        select.title = settingConfig.tooltip;
+    }
 
     const currentValue = getSetting(settingConfig.id);
 
