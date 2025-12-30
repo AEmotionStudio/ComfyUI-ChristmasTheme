@@ -873,9 +873,11 @@ app.registerExtension({
 
         // 🎬 Enhanced Animation Loop
         function animate() {
+            // Always schedule next frame first to keep loop running
+            State.animationFrame = requestAnimationFrame(animate);
+
             // Skip if page not visible
             if (!isPageVisible) {
-                State.animationFrame = requestAnimationFrame(animate);
                 return;
             }
 
@@ -887,16 +889,9 @@ app.registerExtension({
                 snowContainer.style.display = isPaused ? 'none' : 'block';
             }
 
-            if (shouldAnimate && !isPaused) {
+            // Only trigger canvas redraw when animating and not paused
+            if (shouldAnimate && !isPaused && app.graph) {
                 app.graph.setDirtyCanvas(true, true);
-                State.animationFrame = requestAnimationFrame(animate);
-            } else if (isPaused) {
-                if (State.animationFrame) {
-                    cancelAnimationFrame(State.animationFrame);
-                    State.animationFrame = null;
-                }
-            } else {
-                State.animationFrame = requestAnimationFrame(animate);
             }
         }
 
