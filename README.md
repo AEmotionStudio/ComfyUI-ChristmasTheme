@@ -73,7 +73,7 @@ Major performance optimizations and bug fixes for a smoother experience:
 <td width="50%">
 
 ### 🎄 Christmas Node Links
-![Node Link Animations](https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme/releases/download/assets/node-links_2.gif)
+![Node Link Animations](https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme/releases/download/assets/node-links.webp)
 
 - Animated light effects along connections
 - **6 color schemes**: Traditional, Warm White, Cool White, Multicolor, Pastel, New Year's Eve
