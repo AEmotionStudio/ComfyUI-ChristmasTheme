@@ -17,7 +17,7 @@
 
 ---
 
-## 📢 Latest Update — December 28, 2025
+## 📢 Latest Update — December 28-29, 2025
 
 ### 🎉 New Year's Live Celebration v1.2.0
 
@@ -31,6 +31,7 @@ A massive update introducing a physics-based particle engine, interactive effect
 | 🤫 **Surprise Finale** | A spectacular, multi-stage 6-layer coordinated show triggered exactly at midnight. *No spoilers!* |
 | 🪩 **Rave Mode** | "Party Mode" setting that transforms background stars into a strobing disco light show. |
 | 🎨 **Visual Core 2.0** | Replaced emoji art with crisp SVG rendering for Snowflakes and Stars, plus new atmospheric Nebula clouds. |
+| 🎁 **Sidebar Panel** | Quick-access Christmas Theme settings tab in the ComfyUI sidebar with festive styling. |
 
 ### ✨ Interactive Effect Library
 Fully modular physics system with unique friction, gravity, and spawn behaviors:
