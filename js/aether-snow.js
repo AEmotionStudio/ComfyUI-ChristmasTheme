@@ -202,10 +202,10 @@ app.registerExtension({
                 left: '0',
                 width: '100%',
                 height: '100%',
-                overflow: 'hidden',
-                pointerEvents: 'none',
-                zIndex: '100'
+                overflow: 'hidden'
             });
+            container.style.pointerEvents = 'none';
+            container.style.zIndex = '9999'; // Ensure it's above everything including ComfyUI menus/canvas
             document.body.appendChild(container);
 
             const style = document.createElement('style');
@@ -223,6 +223,7 @@ app.registerExtension({
             let flakes = [];
             let animationId = null;
             let lastTime = performance.now();
+            let snowAnimTime = 0; // Cumulative animation time that freezes during execution
 
             const getSnowflakeColor = () => {
                 const colorScheme = getSetting("ChristmasTheme.Snowflake.ColorScheme");
@@ -313,31 +314,44 @@ app.registerExtension({
             };
 
             const animate = (currentTime) => {
-                if (!isPageVisible || isExecuting) {
+                // When not visible, just keep the loop running but skip everything
+                if (!isPageVisible) {
                     animationId = requestAnimationFrame(animate);
                     return;
                 }
 
-                const deltaTime = (currentTime - lastTime) / 1000;
-                lastTime = currentTime;
+                // Check for resume from execution to prevent time jumps
+                if (!isExecuting && (currentTime - lastTime) > 1000) {
+                    lastTime = currentTime;
+                }
 
-                const time = currentTime / 1000;
+                // When executing, freeze in place (deltaTime = 0) but still render
+                const deltaTime = isExecuting ? 0 : (currentTime - lastTime) / 1000;
+
+                if (!isExecuting) {
+                    lastTime = currentTime;
+                    snowAnimTime += deltaTime; // Only advance animation time when not executing
+                }
+
                 const height = window.innerHeight;
                 const width = window.innerWidth;
 
                 for (const flake of flakes) {
-                    flake.y += flake.speed * deltaTime;
-                    flake.rotation += flake.rotationSpeed * deltaTime;
+                    // Only update positions if not executing
+                    if (!isExecuting) {
+                        flake.y += flake.speed * deltaTime;
+                        flake.rotation += flake.rotationSpeed * deltaTime;
 
-                    const driftX = Math.sin(time * flake.driftSpeed + flake.driftOffset) * flake.drift;
-
-                    if (flake.y > height + 30) {
-                        flake.y = -30;
-                        flake.x = Math.random() * width;
-                        flake.flakeType = FLAKE_TYPE_NAMES[Math.floor(Math.random() * FLAKE_TYPE_NAMES.length)];
-                        updateFlakeColor(flake);
+                        if (flake.y > height + 30) {
+                            flake.y = -30;
+                            flake.x = Math.random() * width;
+                            flake.flakeType = FLAKE_TYPE_NAMES[Math.floor(Math.random() * FLAKE_TYPE_NAMES.length)];
+                            updateFlakeColor(flake);
+                        }
                     }
 
+                    // Use frozen snowAnimTime for drift so it pauses during execution
+                    const driftX = Math.sin(snowAnimTime * flake.driftSpeed + flake.driftOffset) * flake.drift;
                     flake.element.style.transform = `translate(${flake.x + driftX}px, ${flake.y}px) rotate(${flake.rotation}rad)`;
                 }
 

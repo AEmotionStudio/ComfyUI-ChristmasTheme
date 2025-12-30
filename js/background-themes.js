@@ -15,6 +15,7 @@ document.addEventListener('visibilitychange', () => {
 
 // Workflow execution state - pauses animations during generation
 let isExecuting = false;
+let executionEndTime = 0; // Track when execution ended to add cooldown
 
 // Store original method for cleanup
 let originalDrawBackCanvas = null;
@@ -1418,6 +1419,7 @@ let currentFps = 60;
 
 // Animation timing
 let lastAnimationTime = 0;
+let animationTime = 0; // Cumulative time that freezes during execution
 let lastShootingStarTime = 0;
 
 /**
@@ -2046,33 +2048,51 @@ function drawOrnateSnowflake(ctx, x, y, size, rotation) {
  */
 function drawEnhancedBackground(ctx, width, height) {
     if (!isPageVisible) return;
-    if (isExecuting) return; // Pause animations during workflow execution
     if (!getSetting("ChristmasTheme.Background.Enabled")) return;
 
     const now = performance.now();
-    const deltaTime = (now - lastAnimationTime) / 1000;
-    lastAnimationTime = now;
 
-    // FPS tracking
-    frameCount++;
-    if (now - lastFpsCheck >= 1000) {
-        currentFps = frameCount;
-        frameCount = 0;
-        lastFpsCheck = now;
+    // Check for resume from execution to prevent time jumps
+    // If we just finished executing (or cooldown), reset lastAnimationTime to now
+    if (!isExecuting && (now - lastAnimationTime) > 1000) {
+        lastAnimationTime = now;
+    }
+
+    // When executing, freeze deltaTime and animationTime to pause all animations
+    const deltaTime = isExecuting ? 0 : (now - lastAnimationTime) / 1000;
+
+    if (!isExecuting) {
+        lastAnimationTime = now;
+        animationTime += deltaTime; // Only advance animation time when not executing
+    }
+
+    // FPS tracking (skip during execution to preserve frame counters)
+    if (!isExecuting) {
+        frameCount++;
+        if (now - lastFpsCheck >= 1000) {
+            currentFps = frameCount;
+            frameCount = 0;
+            lastFpsCheck = now;
+        }
     }
 
     const lowPerfMode = currentFps < 30;
 
-    // Initialize stars if needed
-    if (!starInitialized || cachedWidth !== width || cachedHeight !== height) {
+    // 500ms cooldown after execution ends to prevent reinitialization from canvas size changes
+    const inCooldown = (now - executionEndTime) < 500;
+
+    // Initialize stars if needed (but don't reinitialize during execution or cooldown)
+    if (!isExecuting && !inCooldown && (!starInitialized || cachedWidth !== width || cachedHeight !== height)) {
         cachedWidth = width;
         cachedHeight = height;
         initStars(width, height);
     }
 
     // Initialize background snowflakes if snow is enabled
+    // CRITICAL FIX: Do NOT reinitialize snowflakes on resize! They will just wrap naturally.
+    // Reinitializing clears them, causing "disappearing" effect during resize storms.
     const snowEnabled = getSetting("ChristmasTheme.Snowflake.Enabled");
-    if (snowEnabled && (!bgSnowflakesInitialized || cachedWidth !== width || cachedHeight !== height)) {
+    if (!isExecuting && !inCooldown && snowEnabled && (!bgSnowflakesInitialized)) {
         initBgSnowflakes(width, height);
     }
 
@@ -2103,7 +2123,7 @@ function drawEnhancedBackground(ctx, width, height) {
     const partyMode = getSetting("ChristmasTheme.Background.PartyMode");
     const colorTheme = getSetting("ChristmasTheme.Background.ColorTheme") || "classic";
     const theme = BACKGROUND_THEMES[colorTheme] || BACKGROUND_THEMES.classic;
-    const time = now / 1000;
+    const time = animationTime; // Use frozen animation time so effects pause during execution
 
     // Party mode color palette (vibrant rave colors)
     const partyColors = ['#ff0080', '#00ff80', '#8000ff', '#ff8000', '#00ffff', '#ff00ff', '#ffff00', '#00ff00'];
@@ -2229,8 +2249,8 @@ function drawEnhancedBackground(ctx, width, height) {
             // Horizontal drift using sine wave
             const driftX = Math.sin(time * flake.driftSpeed + flake.driftOffset) * flake.drift;
 
-            // Wrap around when off screen
-            if (flake.y > height + 20) {
+            // Wrap around when off screen (only if not executing/frozen)
+            if (!isExecuting && flake.y > height + 20) {
                 flake.y = -20;
                 flake.x = Math.random() * width;
                 flake.color = getBgSnowflakeColor(); // Get new color on wrap
@@ -2403,8 +2423,8 @@ function drawEnhancedBackground(ctx, width, height) {
             console.log("🎆 Grace period complete");
         }
 
-        // Spawn rate depends on finale state - but DON'T spawn during grace period
-        const shouldSpawn = finaleActive || (getSetting("ChristmasTheme.Background.Fireworks") && !finaleGracePeriod);
+        // Spawn rate depends on finale state - but DON'T spawn during grace period or execution
+        const shouldSpawn = !isExecuting && (finaleActive || (getSetting("ChristmasTheme.Background.Fireworks") && !finaleGracePeriod));
         if (shouldSpawn) {
             const spawnInterval = finaleActive ? 100 + Math.random() * 150 : 2000 + Math.random() * 2000;
             if (now - lastFireworkTime > spawnInterval) {
@@ -2693,9 +2713,11 @@ app.registerExtension({
         });
         app.api.addEventListener("executed", () => {
             isExecuting = false;
+            executionEndTime = performance.now(); // Track when execution ended
         });
         app.api.addEventListener("execution_error", () => {
             isExecuting = false;
+            executionEndTime = performance.now();
         });
 
         // Add settings with onChange callbacks to update cache
