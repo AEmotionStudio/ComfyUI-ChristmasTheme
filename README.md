@@ -99,7 +99,7 @@ Major performance optimizations and bug fixes for a smoother experience:
 <td width="50%">
 
 ### 🌌 Dynamic Backgrounds
-![Background Themes](assets/backgrounds_1.png)
+![Background Themes](https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme/releases/download/assets/backgrounds.webp)
 
 - Animated starry night sky with nebula clouds
 - **6 atmospheric themes**:
@@ -114,9 +114,9 @@ Major performance optimizations and bug fixes for a smoother experience:
 <td width="50%">
 
 ### ✨ Interactive Mouse Effects
-![Interactive Mouse Effects](https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme/releases/download/assets/interactive_mouse_effects.webp)
+![Interactive Mouse Effects](https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme/releases/download/assets/interactive-mouse-effects.webp)
 
-- **22 unique particle effects** with physics simulation
+- **21 unique particle effects** with physics simulation
 - Sparklers, Confetti, Stardust, Aurora, and more
 - Each effect has unique friction, gravity, and spawn behaviors
 - Fully GPU-accelerated with object pooling
