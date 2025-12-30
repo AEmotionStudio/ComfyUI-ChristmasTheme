@@ -205,7 +205,7 @@ app.registerExtension({
                 overflow: 'hidden'
             });
             container.style.pointerEvents = 'none';
-            container.style.zIndex = '9999'; // Ensure it's above everything including ComfyUI menus/canvas
+            container.style.zIndex = '50'; // Above canvas (bg is usually -1 or 1), below ComfyUI menus (~100+)
             document.body.appendChild(container);
 
             const style = document.createElement('style');

@@ -2082,7 +2082,9 @@ function drawEnhancedBackground(ctx, width, height) {
     const inCooldown = (now - executionEndTime) < 500;
 
     // Initialize stars if needed (but don't reinitialize during execution or cooldown)
-    if (!isExecuting && !inCooldown && (!starInitialized || cachedWidth !== width || cachedHeight !== height)) {
+    // CRITICAL FIX: Do NOT reinitialize stars on resize! Canvas resize happens BEFORE
+    // execution_start event fires, causing stars to "vanish" momentarily.
+    if (!isExecuting && !inCooldown && !starInitialized) {
         cachedWidth = width;
         cachedHeight = height;
         initStars(width, height);
@@ -2317,7 +2319,8 @@ function drawEnhancedBackground(ctx, width, height) {
     const shootingStarsEnabled = getSetting("ChristmasTheme.Background.ShootingStars");
     if (!lowPerfMode && shootingStarsEnabled) {
         // Spawn new shooting star occasionally (average every 10 seconds for calmer feel)
-        if (now - lastShootingStarTime > 10000 && Math.random() < 0.02) {
+        // Don't spawn new ones during execution to prevent accumulation
+        if (!isExecuting && now - lastShootingStarTime > 10000 && Math.random() < 0.02) {
             shootingStars.push(createShootingStar(width, height));
             lastShootingStarTime = now;
         }
