@@ -1436,80 +1436,133 @@ function getStarColor() {
 }
 
 /**
- * Initialize star entities for background with depth layers
+ * Create a single star entity at the given position
  */
-function initStars(width, height) {
+function createStarEntity(x, y) {
+    // Create 3 layers: distant (small, dim), normal, bright (rare, glow)
+    const layerRoll = Math.random();
+    let layer, size, baseOpacity, twinkleSpeed, hasGlow, hasSpikes;
+
+    if (layerRoll < 0.6) {
+        // Distant stars (60%) - tiny, dim, very slow twinkle
+        layer = 'distant';
+        size = 0.3 + Math.random() * 0.5;
+        baseOpacity = 0.2 + Math.random() * 0.3;
+        twinkleSpeed = 0.15 + Math.random() * 0.25;  // Slower for calm feel
+        hasGlow = false;
+        hasSpikes = false;
+    } else if (layerRoll < 0.92) {
+        // Normal stars (32%) - medium, gentle twinkle
+        layer = 'normal';
+        size = 0.5 + Math.random() * 0.8;
+        baseOpacity = 0.4 + Math.random() * 0.4;
+        twinkleSpeed = 0.25 + Math.random() * 0.5;  // Slower
+        hasGlow = false;
+        hasSpikes = false;
+    } else {
+        // Bright stars (8%) - larger, with glow and possible spikes
+        layer = 'bright';
+        size = 0.8 + Math.random() * 0.7;
+        baseOpacity = 0.7 + Math.random() * 0.3;
+        twinkleSpeed = 0.4 + Math.random() * 0.7;  // Slower
+        hasGlow = true;
+        hasSpikes = Math.random() < 0.4; // 40% of bright stars get spikes
+    }
+
+    return {
+        x: x,
+        y: y,
+        size,
+        // Use much larger offset range + secondary offset to prevent sync
+        twinkleOffset: Math.random() * Math.PI * 20,  // Larger range
+        twinkleOffset2: Math.random() * Math.PI * 15, // Secondary offset
+        twinkleSpeed,
+        // Add slight speed variation per star
+        twinkleSpeedMod: 0.85 + Math.random() * 0.3,
+        baseOpacity,
+        layer,
+        hasGlow,
+        hasSpikes,
+        color: getStarColor()
+    };
+}
+
+/**
+ * Create a single nebula entity at the given position
+ */
+function createNebulaEntity(x, y) {
+    return {
+        x: x,
+        y: y,
+        radius: 100 + Math.random() * 150,  // Larger but more diffuse
+        hue: Math.random() * 60 - 30,
+        opacity: 0.015 + Math.random() * 0.015,  // Much more subtle
+        pulseSpeed: 0.015 + Math.random() * 0.025,  // Very slow
+        pulseOffset: Math.random() * Math.PI * 10  // Large offset to prevent sync
+    };
+}
+
+/**
+ * Update star entities for background (init or resize)
+ */
+function updateStars(width, height) {
+    // 1. Filter existing entities if initialized
+    if (starInitialized) {
+        starEntities = starEntities.filter(s => s.x <= width && s.y <= height);
+        nebulaEntities = nebulaEntities.filter(n => n.x <= width && n.y <= height);
+    } else {
+        starEntities = [];
+        nebulaEntities = [];
+    }
+
     const area = width * height;
     const density = 0.0003; // slightly reduced density
-    const count = Math.min(Math.floor(area * density), 800); // Cap at 800 stars
 
-    starEntities = [];
-    for (let i = 0; i < count; i++) {
-        // Create 3 layers: distant (small, dim), normal, bright (rare, glow)
-        const layerRoll = Math.random();
-        let layer, size, baseOpacity, twinkleSpeed, hasGlow, hasSpikes;
+    // 2. Add stars if needed
+    const targetStarCount = Math.min(Math.floor(area * density), 800); // Cap at 800 stars
+    const currentStarCount = starEntities.length;
+    const starsNeeded = targetStarCount - currentStarCount;
 
-        if (layerRoll < 0.6) {
-            // Distant stars (60%) - tiny, dim, very slow twinkle
-            layer = 'distant';
-            size = 0.3 + Math.random() * 0.5;
-            baseOpacity = 0.2 + Math.random() * 0.3;
-            twinkleSpeed = 0.15 + Math.random() * 0.25;  // Slower for calm feel
-            hasGlow = false;
-            hasSpikes = false;
-        } else if (layerRoll < 0.92) {
-            // Normal stars (32%) - medium, gentle twinkle
-            layer = 'normal';
-            size = 0.5 + Math.random() * 0.8;
-            baseOpacity = 0.4 + Math.random() * 0.4;
-            twinkleSpeed = 0.25 + Math.random() * 0.5;  // Slower
-            hasGlow = false;
-            hasSpikes = false;
-        } else {
-            // Bright stars (8%) - larger, with glow and possible spikes
-            layer = 'bright';
-            size = 0.8 + Math.random() * 0.7;
-            baseOpacity = 0.7 + Math.random() * 0.3;
-            twinkleSpeed = 0.4 + Math.random() * 0.7;  // Slower
-            hasGlow = true;
-            hasSpikes = Math.random() < 0.4; // 40% of bright stars get spikes
+    if (starsNeeded > 0) {
+        let added = 0;
+        let attempts = 0;
+        // Safety break after reasonable attempts to find spot
+        while (added < starsNeeded && attempts < starsNeeded * 4) {
+            attempts++;
+            const x = Math.random() * width;
+            const y = Math.random() * height;
+
+            // If we are resizing (already initialized), try to place stars in the new empty areas
+            // to avoid clumping in the already populated area.
+            // New area is where x > cachedWidth OR y > cachedHeight
+            if (starInitialized && x < cachedWidth && y < cachedHeight) {
+                continue;
+            }
+
+            starEntities.push(createStarEntity(x, y));
+            added++;
         }
-
-        starEntities.push({
-            x: Math.random() * width,
-            y: Math.random() * height,
-            size,
-            // Use much larger offset range + secondary offset to prevent sync
-            twinkleOffset: Math.random() * Math.PI * 20,  // Larger range  
-            twinkleOffset2: Math.random() * Math.PI * 15, // Secondary offset
-            twinkleSpeed,
-            // Add slight speed variation per star
-            twinkleSpeedMod: 0.85 + Math.random() * 0.3,
-            baseOpacity,
-            layer,
-            hasGlow,
-            hasSpikes,
-            color: getStarColor()
-        });
     }
 
-    // Create nebula clouds (soft colored areas)
-    nebulaEntities = [];
-    const nebulaCount = Math.min(Math.floor(count * 0.01), 5); // Just a few nebulae
-    for (let i = 0; i < nebulaCount; i++) {
-        nebulaEntities.push({
-            x: Math.random() * width,
-            y: Math.random() * height * 0.6, // More in upper area
-            radius: 100 + Math.random() * 150,  // Larger but more diffuse
-            hue: Math.random() * 60 - 30,
-            opacity: 0.015 + Math.random() * 0.015,  // Much more subtle
-            pulseSpeed: 0.015 + Math.random() * 0.025,  // Very slow
-            pulseOffset: Math.random() * Math.PI * 10  // Large offset to prevent sync
-        });
+    // 3. Add nebulae if needed
+    const targetNebulaCount = Math.min(Math.floor(targetStarCount * 0.01), 5); // Based on star count
+    const currentNebulaCount = nebulaEntities.length;
+    const nebulaeNeeded = targetNebulaCount - currentNebulaCount;
+
+    if (nebulaeNeeded > 0) {
+        for (let i = 0; i < nebulaeNeeded; i++) {
+            // Nebulae prefer upper area (y * 0.6)
+            // We'll just spawn them randomly in the whole area but bias y
+            const x = Math.random() * width;
+            const y = Math.random() * height * 0.6;
+            nebulaEntities.push(createNebulaEntity(x, y));
+        }
     }
 
-    starInitialized = true;
-    console.log(`⭐ Created ${starEntities.length} stars, ${nebulaEntities.length} nebulae`);
+    if (!starInitialized) {
+        console.log(`⭐ Created ${starEntities.length} stars, ${nebulaEntities.length} nebulae`);
+        starInitialized = true;
+    }
 }
 
 /**
@@ -2083,12 +2136,14 @@ function drawEnhancedBackground(ctx, width, height) {
     const inCooldown = (now - executionEndTime) < 500;
 
     // Initialize stars if needed (but don't reinitialize during execution or cooldown)
-    // CRITICAL FIX: Do NOT reinitialize stars on resize! Canvas resize happens BEFORE
-    // execution_start event fires, causing stars to "vanish" momentarily.
-    if (!isExecuting && !inCooldown && !starInitialized) {
-        cachedWidth = width;
-        cachedHeight = height;
-        initStars(width, height);
+    // Robust resize handling: Use updateStars which handles incremental updates
+    // to prevent "vanishing" stars by preserving existing ones.
+    if (!isExecuting && !inCooldown) {
+        if (!starInitialized || cachedWidth !== width || cachedHeight !== height) {
+            updateStars(width, height);
+            cachedWidth = width;
+            cachedHeight = height;
+        }
     }
 
     // Initialize background snowflakes if snow is enabled
