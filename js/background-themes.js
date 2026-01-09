@@ -1549,10 +1549,10 @@ function getGradient(ctx, height) {
         return cachedGradient;
     }
 
-    const theme = BACKGROUND_THEMES[colorTheme] || BACKGROUND_THEMES.classic;
+    let theme = BACKGROUND_THEMES[colorTheme] || BACKGROUND_THEMES.classic;
     if (!theme) {
-        console.warn("No theme found for", colorTheme);
-        return null;
+        console.warn("No theme found for", colorTheme, "- falling back to default");
+        theme = { top: '#05004c', bottom: '#110E19', star: '#ffffff' };
     }
 
     const gradient = ctx.createLinearGradient(0, 0, 0, height);
