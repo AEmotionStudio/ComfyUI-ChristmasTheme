@@ -685,7 +685,8 @@ app.registerExtension({
                 }
                 await new Promise(resolve => setTimeout(resolve, interval));
             }
-            return false;
+            // Final check to ensure we use the full timeout window
+            return !!(app.extensionManager && app.extensionManager.registerSidebarTab);
         };
 
         // Wait for manager to be ready
