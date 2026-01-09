@@ -2644,10 +2644,16 @@ function drawEnhancedBackground(ctx, width, height) {
 /**
  * Hook into LGraphCanvas to draw our background
  */
-function installBackgroundHook() {
+const MAX_RETRIES = 50; // 5 seconds
+
+function installBackgroundHook(retryCount = 0) {
     if (!app.canvas) {
+        if (retryCount >= MAX_RETRIES) {
+            console.error("Failed to install background hook: app.canvas not available after waiting.");
+            return;
+        }
         console.log("Waiting for app.canvas to install background hook...");
-        setTimeout(installBackgroundHook, 100);
+        setTimeout(() => installBackgroundHook(retryCount + 1), 100);
         return;
     }
 
