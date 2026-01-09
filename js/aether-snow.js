@@ -189,12 +189,35 @@ app.registerExtension({
     async setup() {
         console.log("✨ Initializing Premium Snow Effect with JS animation...");
 
+        let container = null;
+        let style = null;
+        let checkSettings = null;
+        let animationId = null;
+        let handleVisibility = null;
+
+        const cleanup = () => {
+            try {
+                if (checkSettings) clearInterval(checkSettings);
+                if (handleVisibility) document.removeEventListener('visibilitychange', handleVisibility);
+                if (animationId) cancelAnimationFrame(animationId);
+                if (container) container.remove();
+                if (style) style.remove();
+            } catch (e) {
+                console.warn("Error during Snow Effect cleanup:", e);
+            }
+            checkSettings = null;
+            handleVisibility = null;
+            animationId = null;
+            container = null;
+            style = null;
+        };
+
         try {
             const perfTier = getPerformanceTier();
             const totalFlakes = SNOWFLAKE_CONFIG.FLAKE_COUNTS[perfTier];
             console.log(`❄️ Performance tier: ${perfTier}, using ${totalFlakes} foreground snowflakes (8 designs)`);
 
-            const container = document.createElement('div');
+            container = document.createElement('div');
             container.id = 'comfy-aether-snow';
             Object.assign(container.style, {
                 position: 'fixed',
@@ -208,7 +231,7 @@ app.registerExtension({
             container.style.zIndex = '50'; // Above canvas (bg is usually -1 or 1), below ComfyUI menus (~100+)
             document.body.appendChild(container);
 
-            const style = document.createElement('style');
+            style = document.createElement('style');
             style.id = 'snowflake-styles';
             style.textContent = `
                 .snowflake {
@@ -221,7 +244,7 @@ app.registerExtension({
             document.head.appendChild(style);
 
             let flakes = [];
-            let animationId = null;
+            // animationId initialized above
             let lastTime = performance.now();
             let snowAnimTime = 0; // Cumulative animation time that freezes during execution
 
@@ -366,7 +389,7 @@ app.registerExtension({
                 animationId = requestAnimationFrame(animate);
             }
 
-            const handleVisibility = () => {
+            handleVisibility = () => {
                 if (document.visibilityState !== 'hidden') {
                     lastTime = performance.now();
                 }
@@ -378,7 +401,7 @@ app.registerExtension({
             let lastGlow = getSetting("ChristmasTheme.Snowflake.Glow");
             let lastEnabled = getSetting("ChristmasTheme.Snowflake.Enabled");
 
-            const checkSettings = setInterval(() => {
+            checkSettings = setInterval(() => {
                 const currentEnabled = getSetting("ChristmasTheme.Snowflake.Enabled");
                 const currentColorScheme = getSetting("ChristmasTheme.Snowflake.ColorScheme");
                 const currentGlow = getSetting("ChristmasTheme.Snowflake.Glow");
@@ -416,15 +439,10 @@ app.registerExtension({
                 }
             }, 500);
 
-            return () => {
-                clearInterval(checkSettings);
-                document.removeEventListener('visibilitychange', handleVisibility);
-                if (animationId) cancelAnimationFrame(animationId);
-                container.remove();
-                style.remove();
-            };
+            return cleanup;
         } catch (error) {
             console.error("❌ Failed to initialize Snow Effect:", error);
+            cleanup();
         }
     }
 });
