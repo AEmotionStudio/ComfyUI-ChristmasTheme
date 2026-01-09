@@ -1,2 +1,19 @@
 __pycache__/
 Browser_Console_Erros_2.md
+
+# Node.js
+node_modules/
+
+# TypeScript
+*.tsbuildinfo
+
+# Build artifacts (generated from src/)
+web/
+
+# Testing
+test-results/
+playwright-report/
+coverage/
+
+# Lock files (optional - remove if you want to track)
+# pnpm-lock.yaml

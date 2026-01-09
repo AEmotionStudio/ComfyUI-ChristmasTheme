@@ -1,218 +1,210 @@
-/**
- * Christmas Theme Sidebar Tab
- * Provides quick access to all Christmas Theme settings in the ComfyUI sidebar
- */
 import { app } from "../../../scripts/app.js";
 import { getSetting, updateCache } from "./settings-cache.js";
-
-// Settings definitions for the sidebar
 const SETTINGS_CONFIG = {
-    background: {
-        title: "🌌 Background",
-        settings: [
-            {
-                id: "ChristmasTheme.Background.Enabled",
-                label: "🌟 Background Effect",
-                type: "toggle"
-            },
-            {
-                id: "ChristmasTheme.Background.ColorTheme",
-                label: "🎨 Color Theme",
-                type: "select",
-                options: [
-                    { value: "classic", text: "🌌 Classic Night" },
-                    { value: "christmas", text: "🎄 Christmas Forest" },
-                    { value: "candycane", text: "🍬 Candy Cane Red" },
-                    { value: "frostnight", text: "❄️ Frost Night" },
-                    { value: "gingerbread", text: "🍪 Gingerbread" },
-                    { value: "darknight", text: "🌑 Dark Night" }
-                ]
-            },
-            {
-                id: "ChristmasTheme.Background.Stars",
-                label: "⭐ Background Stars",
-                type: "toggle"
-            },
-            {
-                id: "ChristmasTheme.Background.ShootingStars",
-                label: "☄️ Shooting Stars",
-                type: "toggle"
-            },
-            {
-                id: "ChristmasTheme.Background.PartyMode",
-                label: "🪩 Party Mode",
-                type: "toggle"
-            },
-            {
-                id: "ChristmasTheme.Background.Fireworks",
-                label: "🎆 Fireworks",
-                type: "toggle"
-            },
-            {
-                id: "ChristmasTheme.Background.Countdown",
-                label: "🎊 New Year Countdown",
-                type: "toggle"
-            },
-            {
-                id: "ChristmasTheme.Background.MouseEffect",
-                label: "✨ Mouse Trail",
-                type: "select",
-                options: [
-                    { value: "none", text: "⭘ Off" },
-                    { value: "sparkler", text: "✨ Sparkler" },
-                    { value: "snowflake", text: "❄️ Snowflake" },
-                    { value: "confetti", text: "🎊 Confetti" },
-                    { value: "stardust", text: "⭐ Stardust" },
-                    { value: "comet", text: "☄️ Comet" },
-                    { value: "aurora", text: "🌌 Aurora" },
-                    { value: "ribbon", text: "🎀 Ribbon" },
-                    { value: "crystal", text: "💎 Crystal" },
-                    { value: "petals", text: "🌸 Petals" },
-                    { value: "gifts", text: "🎁 Gifts" },
-                    { value: "candy", text: "🍬 Candy" },
-                    { value: "orb", text: "🔮 Magic Orb" },
-                    { value: "magic", text: "✨ Magic Wand" },
-                    { value: "nova", text: "🌟 Nova" },
-                    { value: "bubbles", text: "💧 Bubbles" },
-                    { value: "embers", text: "🔥 Embers" },
-                    { value: "lightning", text: "⚡ Lightning" },
-                    { value: "leaves", text: "🍂 Leaves" },
-                    { value: "wishes", text: "💫 Wishes" },
-                    { value: "notes", text: "🎵 Notes" },
-                    { value: "hearts", text: "💖 Hearts" }
-                ]
-            }
+  background: {
+    title: "🌌 Background",
+    settings: [
+      {
+        id: "ChristmasTheme.Background.Enabled",
+        label: "🌟 Background Effect",
+        type: "toggle"
+      },
+      {
+        id: "ChristmasTheme.Background.ColorTheme",
+        label: "🎨 Color Theme",
+        type: "select",
+        options: [
+          { value: "classic", text: "🌌 Classic Night" },
+          { value: "christmas", text: "🎄 Christmas Forest" },
+          { value: "candycane", text: "🍬 Candy Cane Red" },
+          { value: "frostnight", text: "❄️ Frost Night" },
+          { value: "gingerbread", text: "🍪 Gingerbread" },
+          { value: "darknight", text: "🌑 Dark Night" }
         ]
-    },
-    lights: {
-        title: "🎄 Christmas Lights",
-        settings: [
-            {
-                id: "ChristmasTheme.ChristmasEffects.LightSwitch",
-                label: "🎄 Christmas Lights",
-                type: "toggle",
-                trueValue: 1,
-                falseValue: 0
-            },
-            {
-                id: "ChristmasTheme.ChristmasEffects.ColorScheme",
-                label: "🎨 Color Scheme",
-                type: "select",
-                options: [
-                    { value: "traditional", text: "🎄 Traditional" },
-                    { value: "warm", text: "🔆 Warm White" },
-                    { value: "cool", text: "❄️ Cool White" },
-                    { value: "multicolor", text: "🌈 Multicolor" },
-                    { value: "pastel", text: "🎀 Pastel" },
-                    { value: "newyear", text: "🎉 New Year's Eve" }
-                ]
-            },
-            {
-                id: "ChristmasTheme.ChristmasEffects.Twinkle",
-                label: "✨ Light Effect",
-                type: "select",
-                options: [
-                    { value: "steady", text: "Steady" },
-                    { value: "gentle", text: "Gentle Twinkle" },
-                    { value: "sparkle", text: "Sparkle" },
-                    { value: "candycane", text: "🍬 Candy Cane" },
-                    { value: "frost", text: "❄️ Frost Trail" },
-                    { value: "aurora", text: "🌌 Aurora Flow" }
-                ]
-            },
-            {
-                id: "ChristmasTheme.ChristmasEffects.BulbShape",
-                label: "💡 Bulb Shape",
-                type: "select",
-                options: [
-                    { value: "classic", text: "🔴 Classic Round" },
-                    { value: "icicle", text: "❄️ Icicle Point" }
-                ]
-            },
-            {
-                id: "ChristmasTheme.ChristmasEffects.Direction",
-                label: "🔄 Flow Direction",
-                type: "select",
-                tooltip: "If not animating properly, refresh the page",
-                options: [
-                    { value: -1, text: "Forward ➡️" },
-                    { value: 1, text: "Reverse ⬅️" }
-                ]
-            },
-            {
-                id: "ChristmasTheme.ChristmasEffects.Thickness",
-                label: "💫 Light Size",
-                type: "slider",
-                min: 1,
-                max: 10,
-                step: 0.5
-            },
-            {
-                id: "ChristmasTheme.ChristmasEffects.GlowIntensity",
-                label: "✨ Glow Intensity",
-                type: "slider",
-                min: 0,
-                max: 30,
-                step: 1
-            },
-            {
-                id: "ChristmasTheme.Link Style",
-                label: "🔗 Link Style",
-                type: "select",
-                options: [
-                    { value: "spline", text: "Spline" },
-                    { value: "straight", text: "Straight" },
-                    { value: "linear", text: "Linear" },
-                    { value: "hidden", text: "Hidden" }
-                ]
-            }
+      },
+      {
+        id: "ChristmasTheme.Background.Stars",
+        label: "⭐ Background Stars",
+        type: "toggle"
+      },
+      {
+        id: "ChristmasTheme.Background.ShootingStars",
+        label: "☄️ Shooting Stars",
+        type: "toggle"
+      },
+      {
+        id: "ChristmasTheme.Background.PartyMode",
+        label: "🪩 Party Mode",
+        type: "toggle"
+      },
+      {
+        id: "ChristmasTheme.Background.Fireworks",
+        label: "🎆 Fireworks",
+        type: "toggle"
+      },
+      {
+        id: "ChristmasTheme.Background.Countdown",
+        label: "🎊 New Year Countdown",
+        type: "toggle"
+      },
+      {
+        id: "ChristmasTheme.Background.MouseEffect",
+        label: "✨ Mouse Trail",
+        type: "select",
+        options: [
+          { value: "none", text: "⭘ Off" },
+          { value: "sparkler", text: "✨ Sparkler" },
+          { value: "snowflake", text: "❄️ Snowflake" },
+          { value: "confetti", text: "🎊 Confetti" },
+          { value: "stardust", text: "⭐ Stardust" },
+          { value: "comet", text: "☄️ Comet" },
+          { value: "aurora", text: "🌌 Aurora" },
+          { value: "ribbon", text: "🎀 Ribbon" },
+          { value: "crystal", text: "💎 Crystal" },
+          { value: "petals", text: "🌸 Petals" },
+          { value: "gifts", text: "🎁 Gifts" },
+          { value: "candy", text: "🍬 Candy" },
+          { value: "orb", text: "🔮 Magic Orb" },
+          { value: "magic", text: "✨ Magic Wand" },
+          { value: "nova", text: "🌟 Nova" },
+          { value: "bubbles", text: "💧 Bubbles" },
+          { value: "embers", text: "🔥 Embers" },
+          { value: "lightning", text: "⚡ Lightning" },
+          { value: "leaves", text: "🍂 Leaves" },
+          { value: "wishes", text: "💫 Wishes" },
+          { value: "notes", text: "🎵 Notes" },
+          { value: "hearts", text: "💖 Hearts" }
         ]
-    },
-    snow: {
-        title: "❄️ Snow Effect",
-        settings: [
-            {
-                id: "ChristmasTheme.Snowflake.Enabled",
-                label: "❄️ Snow Effect",
-                type: "toggle",
-                trueValue: 1,
-                falseValue: 0
-            },
-            {
-                id: "ChristmasTheme.Snowflake.ColorScheme",
-                label: "🎨 Snowflake Color",
-                type: "select",
-                options: [
-                    { value: "white", text: "❄️ Classic White" },
-                    { value: "blue", text: "💠 Ice Blue" },
-                    { value: "rainbow", text: "🌈 Rainbow" },
-                    { value: "match", text: "🎨 Match Lights" },
-                    { value: "newyear", text: "🎉 New Year's Eve" }
-                ]
-            },
-            {
-                id: "ChristmasTheme.Snowflake.Glow",
-                label: "✨ Snowflake Glow",
-                type: "slider",
-                min: 0,
-                max: 20,
-                step: 1
-            }
+      }
+    ]
+  },
+  lights: {
+    title: "🎄 Christmas Lights",
+    settings: [
+      {
+        id: "ChristmasTheme.ChristmasEffects.LightSwitch",
+        label: "🎄 Christmas Lights",
+        type: "toggle",
+        trueValue: 1,
+        falseValue: 0
+      },
+      {
+        id: "ChristmasTheme.ChristmasEffects.ColorScheme",
+        label: "🎨 Color Scheme",
+        type: "select",
+        options: [
+          { value: "traditional", text: "🎄 Traditional" },
+          { value: "warm", text: "🔆 Warm White" },
+          { value: "cool", text: "❄️ Cool White" },
+          { value: "multicolor", text: "🌈 Multicolor" },
+          { value: "pastel", text: "🎀 Pastel" },
+          { value: "newyear", text: "🎉 New Year's Eve" }
         ]
-    },
-    performance: {
-        title: "⚡ Performance",
-        settings: [
-            {
-                id: "ChristmasTheme.PauseDuringRender",
-                label: "⏸️ Pause During Render",
-                type: "toggle"
-            }
+      },
+      {
+        id: "ChristmasTheme.ChristmasEffects.Twinkle",
+        label: "✨ Light Effect",
+        type: "select",
+        options: [
+          { value: "steady", text: "Steady" },
+          { value: "gentle", text: "Gentle Twinkle" },
+          { value: "sparkle", text: "Sparkle" },
+          { value: "candycane", text: "🍬 Candy Cane" },
+          { value: "frost", text: "❄️ Frost Trail" },
+          { value: "aurora", text: "🌌 Aurora Flow" }
         ]
-    }
+      },
+      {
+        id: "ChristmasTheme.ChristmasEffects.BulbShape",
+        label: "💡 Bulb Shape",
+        type: "select",
+        options: [
+          { value: "classic", text: "🔴 Classic Round" },
+          { value: "icicle", text: "❄️ Icicle Point" }
+        ]
+      },
+      {
+        id: "ChristmasTheme.ChristmasEffects.Direction",
+        label: "🔄 Flow Direction",
+        type: "select",
+        tooltip: "If not animating properly, refresh the page",
+        options: [
+          { value: -1, text: "Forward ➡️" },
+          { value: 1, text: "Reverse ⬅️" }
+        ]
+      },
+      {
+        id: "ChristmasTheme.ChristmasEffects.Thickness",
+        label: "💫 Light Size",
+        type: "slider",
+        min: 1,
+        max: 10,
+        step: 0.5
+      },
+      {
+        id: "ChristmasTheme.ChristmasEffects.GlowIntensity",
+        label: "✨ Glow Intensity",
+        type: "slider",
+        min: 0,
+        max: 30,
+        step: 1
+      },
+      {
+        id: "ChristmasTheme.Link Style",
+        label: "🔗 Link Style",
+        type: "select",
+        options: [
+          { value: "spline", text: "Spline" },
+          { value: "straight", text: "Straight" },
+          { value: "linear", text: "Linear" },
+          { value: "hidden", text: "Hidden" }
+        ]
+      }
+    ]
+  },
+  snow: {
+    title: "❄️ Snow Effect",
+    settings: [
+      {
+        id: "ChristmasTheme.Snowflake.Enabled",
+        label: "❄️ Snow Effect",
+        type: "toggle",
+        trueValue: 1,
+        falseValue: 0
+      },
+      {
+        id: "ChristmasTheme.Snowflake.ColorScheme",
+        label: "🎨 Snowflake Color",
+        type: "select",
+        options: [
+          { value: "white", text: "❄️ Classic White" },
+          { value: "blue", text: "💠 Ice Blue" },
+          { value: "rainbow", text: "🌈 Rainbow" },
+          { value: "match", text: "🎨 Match Lights" },
+          { value: "newyear", text: "🎉 New Year's Eve" }
+        ]
+      },
+      {
+        id: "ChristmasTheme.Snowflake.Glow",
+        label: "✨ Snowflake Glow",
+        type: "slider",
+        min: 0,
+        max: 20,
+        step: 1
+      }
+    ]
+  },
+  performance: {
+    title: "⚡ Performance",
+    settings: [
+      {
+        id: "ChristmasTheme.PauseDuringRender",
+        label: "⏸️ Pause During Render",
+        type: "toggle"
+      }
+    ]
+  }
 };
-
-// CSS styles for the sidebar
 const SIDEBAR_STYLES = `
     .christmas-sidebar {
         padding: 12px;
@@ -406,304 +398,171 @@ const SIDEBAR_STYLES = `
         text-decoration: underline;
     }
 `;
-
-/**
- * Create a toggle switch element
- */
 function createToggle(settingConfig) {
-    const toggle = document.createElement('div');
-    toggle.className = 'christmas-toggle';
-
-    const trueValue = settingConfig.trueValue !== undefined ? settingConfig.trueValue : true;
-    const falseValue = settingConfig.falseValue !== undefined ? settingConfig.falseValue : false;
-
-    // Get current value
-    const currentValue = getSetting(settingConfig.id);
-    if (currentValue === trueValue || currentValue === true || currentValue === 1) {
-        toggle.classList.add('active');
+  const toggle = document.createElement("div");
+  toggle.className = "christmas-toggle";
+  const trueValue = settingConfig.trueValue !== void 0 ? settingConfig.trueValue : true;
+  const falseValue = settingConfig.falseValue !== void 0 ? settingConfig.falseValue : false;
+  const currentValue = getSetting(settingConfig.id);
+  if (currentValue === trueValue || currentValue === true || currentValue === 1) {
+    toggle.classList.add("active");
+  }
+  toggle.addEventListener("click", () => {
+    const isActive = toggle.classList.contains("active");
+    const newValue = isActive ? falseValue : trueValue;
+    toggle.classList.toggle("active");
+    updateCache(settingConfig.id, newValue);
+    if (app.ui && app.ui.settings) {
+      app.ui.settings.setSettingValue(settingConfig.id, newValue);
     }
-
-    toggle.addEventListener('click', () => {
-        const isActive = toggle.classList.contains('active');
-        const newValue = isActive ? falseValue : trueValue;
-
-        toggle.classList.toggle('active');
-        updateCache(settingConfig.id, newValue);
-
-        // Also update the native ComfyUI setting
-        if (app.ui && app.ui.settings) {
-            app.ui.settings.setSettingValue(settingConfig.id, newValue);
-        }
-
-        // Force canvas redraw
-        if (app.canvas) {
-            app.canvas.setDirty(true, true);
-        }
-    });
-
-    return toggle;
+    if (app.canvas) {
+      app.canvas.setDirty(true, true);
+    }
+  });
+  return toggle;
 }
-
-/**
- * Create a select dropdown element
- */
 function createSelect(settingConfig) {
-    const select = document.createElement('select');
-    select.className = 'christmas-select';
-
-    // Add tooltip if defined
-    if (settingConfig.tooltip) {
-        select.title = settingConfig.tooltip;
+  const select = document.createElement("select");
+  select.className = "christmas-select";
+  if (settingConfig.tooltip) {
+    select.title = settingConfig.tooltip;
+  }
+  const currentValue = getSetting(settingConfig.id);
+  (settingConfig.options || []).forEach((opt) => {
+    const option = document.createElement("option");
+    option.value = String(opt.value);
+    option.textContent = opt.text;
+    if (String(opt.value) === String(currentValue)) {
+      option.selected = true;
     }
-
-    const currentValue = getSetting(settingConfig.id);
-
-    settingConfig.options.forEach(opt => {
-        const option = document.createElement('option');
-        option.value = opt.value;
-        option.textContent = opt.text;
-        if (String(opt.value) === String(currentValue)) {
-            option.selected = true;
-        }
-        select.appendChild(option);
-    });
-
-    select.addEventListener('change', () => {
-        let value = select.value;
-        // Convert to number if it looks like a number
-        if (!isNaN(value) && value !== '') {
-            value = Number(value);
-        }
-
-        updateCache(settingConfig.id, value);
-
-        // Also update the native ComfyUI setting
-        if (app.ui && app.ui.settings) {
-            app.ui.settings.setSettingValue(settingConfig.id, value);
-        }
-
-        // Force canvas redraw
-        if (app.canvas) {
-            app.canvas.setDirty(true, true);
-        }
-    });
-
-    return select;
+    select.appendChild(option);
+  });
+  select.addEventListener("change", () => {
+    let value = select.value;
+    if (!isNaN(Number(value)) && value !== "") {
+      value = Number(value);
+    }
+    updateCache(settingConfig.id, value);
+    if (app.ui && app.ui.settings) {
+      app.ui.settings.setSettingValue(settingConfig.id, value);
+    }
+    if (app.canvas) {
+      app.canvas.setDirty(true, true);
+    }
+  });
+  return select;
 }
-
-/**
- * Create a slider element
- */
-function createSlider(settingConfig) {
-    const container = document.createElement('div');
-    container.className = 'christmas-slider-container';
-
-    const slider = document.createElement('input');
-    slider.type = 'range';
-    slider.className = 'christmas-slider';
-    slider.min = settingConfig.min;
-    slider.max = settingConfig.max;
-    slider.step = settingConfig.step;
-    slider.value = getSetting(settingConfig.id) || settingConfig.min;
-
-    const valueLabel = document.createElement('span');
-    valueLabel.className = 'christmas-slider-value';
-    valueLabel.textContent = slider.value;
-
-    slider.addEventListener('input', () => {
-        const value = parseFloat(slider.value);
-        valueLabel.textContent = value;
-
-        updateCache(settingConfig.id, value);
-
-        // Also update the native ComfyUI setting
-        if (app.ui && app.ui.settings) {
-            app.ui.settings.setSettingValue(settingConfig.id, value);
-        }
-
-        // Force canvas redraw
-        if (app.canvas) {
-            app.canvas.setDirty(true, true);
-        }
-    });
-
-    container.appendChild(slider);
-    container.appendChild(valueLabel);
-
-    return container;
-}
-
-/**
- * Create a setting row
- */
 function createSettingRow(settingConfig) {
-    const row = document.createElement('div');
-    row.className = 'christmas-setting-row';
-
-    // Sliders get special stacked layout
-    if (settingConfig.type === 'slider') {
-        const sliderRow = document.createElement('div');
-        sliderRow.className = 'christmas-slider-row';
-
-        // Header with label and value
-        const header = document.createElement('div');
-        header.className = 'christmas-slider-header';
-
-        const label = document.createElement('span');
-        label.className = 'christmas-setting-label';
-        label.textContent = settingConfig.label;
-
-        const valueLabel = document.createElement('span');
-        valueLabel.className = 'christmas-slider-value';
-        const currentVal = getSetting(settingConfig.id) || settingConfig.min;
-        valueLabel.textContent = currentVal;
-
-        header.appendChild(label);
-        header.appendChild(valueLabel);
-
-        // Slider container
-        const sliderContainer = document.createElement('div');
-        sliderContainer.className = 'christmas-slider-container';
-
-        const slider = document.createElement('input');
-        slider.type = 'range';
-        slider.className = 'christmas-slider';
-        slider.min = settingConfig.min;
-        slider.max = settingConfig.max;
-        slider.step = settingConfig.step;
-        slider.value = currentVal;
-
-        slider.addEventListener('input', () => {
-            const value = parseFloat(slider.value);
-            valueLabel.textContent = value;
-
-            updateCache(settingConfig.id, value);
-
-            if (app.ui && app.ui.settings) {
-                app.ui.settings.setSettingValue(settingConfig.id, value);
-            }
-
-            if (app.canvas) {
-                app.canvas.setDirty(true, true);
-            }
-        });
-
-        sliderContainer.appendChild(slider);
-        sliderRow.appendChild(header);
-        sliderRow.appendChild(sliderContainer);
-        row.appendChild(sliderRow);
-
-        return row;
-    }
-
-    // Standard layout for toggles and selects
-    const label = document.createElement('span');
-    label.className = 'christmas-setting-label';
-    label.textContent = settingConfig.label;
-
-    let control;
-    switch (settingConfig.type) {
-        case 'toggle':
-            control = createToggle(settingConfig);
-            break;
-        case 'select':
-            control = createSelect(settingConfig);
-            break;
-        default:
-            control = document.createElement('span');
-            control.textContent = 'Unknown type';
-    }
-
-    row.appendChild(label);
-    row.appendChild(control);
-
-    return row;
-}
-
-/**
- * Create a section with its settings
- */
-function createSection(sectionKey, sectionConfig) {
-    const section = document.createElement('div');
-    section.className = 'christmas-sidebar-section';
-
-    const title = document.createElement('div');
-    title.className = 'christmas-sidebar-section-title';
-    title.textContent = sectionConfig.title;
-    section.appendChild(title);
-
-    sectionConfig.settings.forEach(settingConfig => {
-        section.appendChild(createSettingRow(settingConfig));
+  const row = document.createElement("div");
+  row.className = "christmas-setting-row";
+  if (settingConfig.type === "slider") {
+    const sliderRow = document.createElement("div");
+    sliderRow.className = "christmas-slider-row";
+    const header = document.createElement("div");
+    header.className = "christmas-slider-header";
+    const label2 = document.createElement("span");
+    label2.className = "christmas-setting-label";
+    label2.textContent = settingConfig.label;
+    const valueLabel = document.createElement("span");
+    valueLabel.className = "christmas-slider-value";
+    const currentVal = getSetting(settingConfig.id) || settingConfig.min || 0;
+    valueLabel.textContent = String(currentVal);
+    header.appendChild(label2);
+    header.appendChild(valueLabel);
+    const sliderContainer = document.createElement("div");
+    sliderContainer.className = "christmas-slider-container";
+    const slider = document.createElement("input");
+    slider.type = "range";
+    slider.className = "christmas-slider";
+    slider.min = String(settingConfig.min || 0);
+    slider.max = String(settingConfig.max || 100);
+    slider.step = String(settingConfig.step || 1);
+    slider.value = String(currentVal);
+    slider.addEventListener("input", () => {
+      const value = parseFloat(slider.value);
+      valueLabel.textContent = String(value);
+      updateCache(settingConfig.id, value);
+      if (app.ui && app.ui.settings) {
+        app.ui.settings.setSettingValue(settingConfig.id, value);
+      }
+      if (app.canvas) {
+        app.canvas.setDirty(true, true);
+      }
     });
-
-    return section;
+    sliderContainer.appendChild(slider);
+    sliderRow.appendChild(header);
+    sliderRow.appendChild(sliderContainer);
+    row.appendChild(sliderRow);
+    return row;
+  }
+  const label = document.createElement("span");
+  label.className = "christmas-setting-label";
+  label.textContent = settingConfig.label;
+  let control;
+  switch (settingConfig.type) {
+    case "toggle":
+      control = createToggle(settingConfig);
+      break;
+    case "select":
+      control = createSelect(settingConfig);
+      break;
+    default:
+      control = document.createElement("span");
+      control.textContent = "Unknown type";
+  }
+  row.appendChild(label);
+  row.appendChild(control);
+  return row;
 }
-
-/**
- * Render the sidebar content
- */
+function createSection(sectionKey, sectionConfig) {
+  const section = document.createElement("div");
+  section.className = "christmas-sidebar-section";
+  const title = document.createElement("div");
+  title.className = "christmas-sidebar-section-title";
+  title.textContent = sectionConfig.title;
+  section.appendChild(title);
+  sectionConfig.settings.forEach((settingConfig) => {
+    section.appendChild(createSettingRow(settingConfig));
+  });
+  return section;
+}
 function renderSidebar(el) {
-    // Add styles
-    const styleEl = document.createElement('style');
-    styleEl.textContent = SIDEBAR_STYLES;
-    el.appendChild(styleEl);
-
-    // Create main container
-    const container = document.createElement('div');
-    container.className = 'christmas-sidebar';
-
-    // Header
-    const header = document.createElement('div');
-    header.className = 'christmas-sidebar-header';
-    header.innerHTML = '<h2>🎄 Christmas Theme</h2>';
-    container.appendChild(header);
-
-    // Sections
-    for (const [key, config] of Object.entries(SETTINGS_CONFIG)) {
-        container.appendChild(createSection(key, config));
-    }
-
-    // Footer
-    const footer = document.createElement('div');
-    footer.className = 'christmas-footer';
-    footer.innerHTML = '<a href="https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme" target="_blank">🎁 GitHub</a>';
-    container.appendChild(footer);
-
-    el.appendChild(container);
+  const styleEl = document.createElement("style");
+  styleEl.textContent = SIDEBAR_STYLES;
+  el.appendChild(styleEl);
+  const container = document.createElement("div");
+  container.className = "christmas-sidebar";
+  const header = document.createElement("div");
+  header.className = "christmas-sidebar-header";
+  header.innerHTML = "<h2>🎄 Christmas Theme</h2>";
+  container.appendChild(header);
+  for (const [key, config] of Object.entries(SETTINGS_CONFIG)) {
+    container.appendChild(createSection(key, config));
+  }
+  const footer = document.createElement("div");
+  footer.className = "christmas-footer";
+  footer.innerHTML = '<a href="https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme" target="_blank">🎁 GitHub</a>';
+  container.appendChild(footer);
+  el.appendChild(container);
 }
-
-// Register the sidebar tab
 app.registerExtension({
-    name: "Christmas.Theme.Sidebar",
-    async setup() {
-        // Helper to wait for extension manager with timeout
-        const waitForExtensionManager = async (timeout = 3000, interval = 100) => {
-            const startTime = Date.now();
-            while (Date.now() - startTime < timeout) {
-                if (app.extensionManager && app.extensionManager.registerSidebarTab) {
-                    return true;
-                }
-                await new Promise(resolve => setTimeout(resolve, interval));
-            }
-            // Final check to ensure we use the full timeout window
-            return !!(app.extensionManager && app.extensionManager.registerSidebarTab);
-        };
-
-        // Wait for manager to be ready
-        const isReady = await waitForExtensionManager();
-
-        if (isReady) {
-            app.extensionManager.registerSidebarTab({
-                id: "christmas-theme",
-                icon: "pi pi-gift",
-                title: "Christmas",
-                tooltip: "Christmas Theme Settings",
-                type: "custom",
-                render: renderSidebar
-            });
-            console.log("🎄 Christmas Theme sidebar tab registered");
-        } else {
-            console.warn("⚠️ Extension manager not available for sidebar registration (timeout)");
-        }
-    }
+  name: "Christmas.Theme.Sidebar",
+  async setup() {
+    setTimeout(() => {
+      if (app.extensionManager && app.extensionManager.registerSidebarTab) {
+        app.extensionManager.registerSidebarTab({
+          id: "christmas-theme",
+          icon: "pi pi-gift",
+          title: "Christmas",
+          tooltip: "Christmas Theme Settings",
+          type: "custom",
+          render: renderSidebar
+        });
+        console.log("🎄 Christmas Theme sidebar tab registered");
+      } else {
+        console.warn("⚠️ Extension manager not available for sidebar registration");
+      }
+    }, 100);
+  }
 });
+//# sourceMappingURL=christmas-sidebar.js.map
