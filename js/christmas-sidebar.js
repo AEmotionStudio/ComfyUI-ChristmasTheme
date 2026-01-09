@@ -676,21 +676,34 @@ function renderSidebar(el) {
 app.registerExtension({
     name: "Christmas.Theme.Sidebar",
     async setup() {
-        // Wait a bit for the extension manager to be ready
-        setTimeout(() => {
-            if (app.extensionManager && app.extensionManager.registerSidebarTab) {
-                app.extensionManager.registerSidebarTab({
-                    id: "christmas-theme",
-                    icon: "pi pi-gift",
-                    title: "Christmas",
-                    tooltip: "Christmas Theme Settings",
-                    type: "custom",
-                    render: renderSidebar
-                });
-                console.log("🎄 Christmas Theme sidebar tab registered");
-            } else {
-                console.warn("⚠️ Extension manager not available for sidebar registration");
+        // Helper to wait for extension manager with timeout
+        const waitForExtensionManager = async (timeout = 3000, interval = 100) => {
+            const startTime = Date.now();
+            while (Date.now() - startTime < timeout) {
+                if (app.extensionManager && app.extensionManager.registerSidebarTab) {
+                    return true;
+                }
+                await new Promise(resolve => setTimeout(resolve, interval));
             }
-        }, 100);
+            // Final check to ensure we use the full timeout window
+            return !!(app.extensionManager && app.extensionManager.registerSidebarTab);
+        };
+
+        // Wait for manager to be ready
+        const isReady = await waitForExtensionManager();
+
+        if (isReady) {
+            app.extensionManager.registerSidebarTab({
+                id: "christmas-theme",
+                icon: "pi pi-gift",
+                title: "Christmas",
+                tooltip: "Christmas Theme Settings",
+                type: "custom",
+                render: renderSidebar
+            });
+            console.log("🎄 Christmas Theme sidebar tab registered");
+        } else {
+            console.warn("⚠️ Extension manager not available for sidebar registration (timeout)");
+        }
     }
 });
