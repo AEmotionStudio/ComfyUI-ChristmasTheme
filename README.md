@@ -5,9 +5,11 @@
 **Transform your ComfyUI workspace into a winter wonderland**
 
 [![ComfyUI](https://img.shields.io/badge/ComfyUI-Extension-green?style=for-the-badge)](https://github.com/comfyanonymous/ComfyUI)
-[![Dependencies](https://img.shields.io/badge/dependencies-none-brightgreen?style=for-the-badge&color=blue)](pyproject.toml)
+[![Version](https://img.shields.io/badge/Version-1.3.0-orange?style=for-the-badge)](https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme/releases)
 [![License](https://img.shields.io/badge/License-GPLv3-red?style=for-the-badge)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-1.2.2-orange?style=for-the-badge)](https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme/releases)
+[![Dependencies](https://img.shields.io/badge/dependencies-none-brightgreen?style=for-the-badge&color=blue)](package.json)
+[![Last Commit](https://img.shields.io/github/last-commit/AEmotionStudio/ComfyUI-ChristmasTheme?style=for-the-badge&label=Last%20Update&color=orange)](https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme/commits)
+[![Activity](https://img.shields.io/github/commit-activity/m/AEmotionStudio/ComfyUI-ChristmasTheme?style=for-the-badge&label=Activity&color=yellow)](https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme/commits)
 
 ![ComfyUI Christmas Theme Overview](https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme/releases/download/assets/main-preview.webp)
 
@@ -17,52 +19,16 @@
 
 ---
 
-## 📢 Latest Update — December 30, 2025
+## What's New in v1.3.0 (January 9, 2026)
 
-### 🎉 New Year's Live Celebration v1.2.0
+**TypeScript Migration & Animation Fixes**
 
-A massive update introducing a physics-based particle engine, interactive effects, and a synchronized New Year's finale.
+*   **⚡ TypeScript Core**: Completely rewrote the codebase in TypeScript for improved stability and maintenance.
+*   **🧪 Robust Testing**: Added comprehensive Unit (Vitest) and End-to-End (Playwright) standard testing suites.
+*   **✨ Smoother Animations**: Fixed issue where background animations would pause when idle; added continuous render loop.
+*   **🎆 New Year 2027**: Updated countdown logic to automatically target the next year.
 
-| New Feature | Description |
-|-------------|-------------|
-| ✨ **21 Mouse Effects** | Physics-based particle system with 21 unique interactive trails including Sparklers, Confetti, and Magic Wands. |
-| 🔗 **3 New Link Effects** | Candy Cane stripes, icy Frost Trail, and flowing Aurora animations for node connections, plus new icicle-shaped bulbs. |
-| 🎊 **Live Countdown** | Dynamic timer that auto-targets the New Year with a pulsing "Celebration Mode" anticipation phase. |
-| 🤫 **Surprise Finale** | A spectacular, multi-stage 6-layer coordinated show triggered exactly at midnight. *No spoilers!* |
-| 🪩 **Rave Mode** | "Party Mode" setting that transforms background stars into a strobing disco light show. |
-| 🎨 **Visual Core 2.0** | Replaced emoji art with crisp SVG rendering for Snowflakes and Stars, plus new atmospheric Nebula clouds. |
-| 🎁 **Sidebar Panel** | Quick-access Christmas Theme settings tab in the ComfyUI sidebar with festive styling. |
-
-### ✨ Interactive Effect Library
-Fully modular physics system with unique friction, gravity, and spawn behaviors:
-
-| | | | |
-|---|---|---|---|
-| ✨ **Sparkler** | ❄️ **Snowflake** | 🎊 **Confetti** | ⭐ **Stardust** |
-| ☄️ **Comet** | 🌌 **Aurora** | 🎀 **Ribbon** | 💎 **Crystal** |
-| 🌸 **Petals** | 🎁 **Gifts** | 🍬 **Candy** | 🔮 **Magic Orb** |
-| ✨ **Magic Wand** | 🌟 **Nova** | 💧 **Bubbles** | 🔥 **Embers** |
-| ⚡ **Lightning** | 🍂 **Leaves** | 💫 **Wishes** | 🎵 **Notes** |
-| 💖 **Hearts** | | | |
-
----
-
-## 📢 Previous Update — December 25, 2025
-
-### 🚀 Performance Overhaul v1.1.0
-
-Major performance optimizations and bug fixes for a smoother experience:
-
-| Change | Description |
-|--------|-------------|
-| ⚡ **Adaptive Performance** | Auto-adjusts visual quality based on your FPS (3 tiers: normal/warning/critical) |
-| 🔧 **Settings API Fix** | Eliminated ~367,000 console deprecation warnings |
-| 🎯 **Visibility Detection** | Automatically pauses animations when tab is hidden |
-| 🧹 **Pure DOM Snowflakes** | Removed React dependency for lighter, faster snow effects |
-| 📱 **Device-Aware** | Snowflake count adapts to device capability (25-60 flakes) |
-| 🎨 **Gradient Caching** | Background themes now cache gradients for faster rendering |
-| 🔢 **Sin Lookup Table** | Pre-computed trigonometry for twinkle effects |
-| ♻️ **Object Pooling** | Reuses memory allocations to reduce garbage collection |
+> 📄 **See [CHANGELOG.md](CHANGELOG.md) for the complete version history.**
 
 ---
 
@@ -243,26 +209,15 @@ All settings are accessible via **ComfyUI Settings → Christmas Theme**
 Contributions are welcome! Whether it's bug reports, feature suggestions, or pull requests, your help is appreciated.
 
 ---
+<div align="center">
 
-## 🔗 Connect with Æmotion (Developer)
--   YouTube: [AEmotionStudio](https://www.youtube.com/@aemotionstudio/videos)
--   GitHub: [AEmotionStudio](https://github.com/AEmotionStudio)
--   Discord: [Join our community](https://discord.gg/UzC9353mfp)
--   Website: [aemotionstudio.org](https://aemotionstudio.org/)
+**Developed by [Æmotion Studio](https://aemotionstudio.org/)**
 
-## ☕ Support
-If you find this project useful, here are some ways to show your support:
+[![YouTube](https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/@aemotionstudio/videos)
+[![Discord](https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/UzC9353mfp)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/aemotionstudio)
 
-- ⭐ **Star this repo** — It helps others discover the project!
-- 📢 **Share it** — Tell your friends, post on social media, or write about it
-- 🐛 **Report bugs** — Found an issue? Let me know!
-- 💡 **Suggest features** — Ideas are always welcome
-
-If you'd like to support development financially:
-
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/aemotionstudio)
-
-Your support helps dedicate more time to maintaining and improving this project and other projects, developing new features, and creating better documentation and tutorials.
+</div>
 
 ---
 
