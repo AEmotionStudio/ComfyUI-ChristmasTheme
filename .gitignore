@@ -1,5 +1,7 @@
+# Python
 __pycache__/
-Browser_Console_Erros_2.md
+*.py[cod]
+*.egg-info/
 
 # Node.js
 node_modules/
@@ -7,13 +9,37 @@ node_modules/
 # TypeScript
 *.tsbuildinfo
 
+# Source maps (generated during build)
+*.js.map
+
 # Build artifacts (generated from src/)
 web/
+dist/
 
 # Testing
 test-results/
 playwright-report/
 coverage/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE settings (optional)
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Project-specific
+Browser_Console_Erros_2.md
 
 # Lock files (optional - remove if you want to track)
 # pnpm-lock.yaml
