@@ -2332,9 +2332,10 @@ function drawEnhancedBackground(ctx, width, height) {
     const gradient = getGradient(ctx, height);
     if (gradient) {
         ctx.fillStyle = gradient;
-        ctx.globalAlpha = 0.8;
+        ctx.globalAlpha = 0.3; // Subtle overlay (restored to original value)
         ctx.fillRect(0, 0, width, height);
     }
+    ctx.restore();
 
 
     // Draw stars by layer for proper depth effect (if enabled)
