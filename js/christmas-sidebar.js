@@ -398,9 +398,9 @@ function createSection(sectionKey, sectionConfig) {
   ]);
 }
 function renderSidebar(elRoot) {
+  elRoot.innerHTML = "";
   const styleEl = document.createElement("style");
   styleEl.textContent = SIDEBAR_STYLES;
-  elRoot.appendChild(styleEl);
   const sections = Object.entries(SETTINGS_CONFIG).map(
     ([key, config]) => createSection(key, config)
   );
@@ -411,6 +411,8 @@ function renderSidebar(elRoot) {
     }, ["🎁 GitHub"])
   ]);
   const container = el("div", { className: "christmas-sidebar" }, [
+    styleEl,
+    // Styles inside container
     el("div", { className: "christmas-sidebar-header" }, [
       el("h2", {}, ["🎄 Christmas Theme"])
     ]),
