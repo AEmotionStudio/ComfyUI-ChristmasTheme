@@ -504,10 +504,12 @@ function createSection(sectionKey: string, sectionConfig: SectionConfig): HTMLDi
  * Render the sidebar content
  */
 function renderSidebar(elRoot: HTMLElement): void {
-    // Add styles
+    // Clear any existing content to prevent duplicates on re-render
+    elRoot.innerHTML = '';
+
+    // Add styles inside the main container (not as sibling)
     const styleEl = document.createElement('style');
     styleEl.textContent = SIDEBAR_STYLES;
-    elRoot.appendChild(styleEl);
 
     const sections = Object.entries(SETTINGS_CONFIG).map(([key, config]) =>
         createSection(key, config)
@@ -521,6 +523,7 @@ function renderSidebar(elRoot: HTMLElement): void {
     ]);
 
     const container = el('div', { className: 'christmas-sidebar' }, [
+        styleEl,  // Styles inside container
         el('div', { className: 'christmas-sidebar-header' }, [
             el('h2', {}, ["🎄 Christmas Theme"])
         ]),
