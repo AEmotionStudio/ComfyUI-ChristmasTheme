@@ -70,6 +70,8 @@
 ### ❄️ Snowfall Effect
 ![Snowfall Effect](https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme/releases/download/assets/snow-flakes.webp)
 
+- **Custom Snowflakes**: Upload your own images, logos, or emojis
+- **Mix Mode**: Blend custom images with standard snowflakes
 - 8 unique SVG snowflake designs with JS animation
 - **5 color options**: White, Ice Blue, Rainbow, Match Theme, New Year's
 - Adjustable glow intensity
@@ -158,6 +160,7 @@ All settings are accessible via **ComfyUI Settings → Christmas Theme**
 | Christmas Lights | On / Off | On |
 | Color Scheme | Traditional, Warm White, Cool White, Multicolor, Pastel, New Year's Eve | Traditional |
 | Light Effect | Steady, Gentle Twinkle, Sparkle, Candy Cane, Frost Trail, Aurora Flow | Gentle Twinkle |
+| Bulb Shape | Classic Round, Icicle Point | Classic Round |
 | Light Size | 1 - 10 | 3 |
 | Glow Intensity | 0 - 30 | 20 |
 | Flow Direction | Forward / Reverse | Forward |
@@ -187,7 +190,8 @@ All settings are accessible via **ComfyUI Settings → Christmas Theme**
 | Setting | Options | Default |
 |---------|---------|---------|
 | Snow Effect | On / Off | On |
-| Snowflake Color | White, Ice Blue, Rainbow, Match Theme, New Year's | White |
+| Snowflake Color | Classic White, Ice Blue, Rainbow, Match Lights, New Year's Eve | Classic White |
+| Snowflake Shape | Random Mix, Classic, Simple, Bold, Custom Image, Mix Custom + Standard | Random Mix |
 | Snowflake Glow | 0 - 20 | 10 |
 
 </details>
@@ -207,7 +211,7 @@ All settings are accessible via **ComfyUI Settings → Christmas Theme**
 
 | Component | Technology |
 |-----------|------------|
-| Snowflakes | Pure DOM + CSS animations (GPU-accelerated) |
+| Snowflakes | Pure DOM + JS-driven CSS Transforms (GPU-accelerated) |
 | Background | Canvas 2D with gradient caching |
 | Node Links | Canvas override with adaptive rendering |
 | Settings | Centralized cache with onChange callbacks |
