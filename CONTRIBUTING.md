@@ -15,17 +15,9 @@ If you encounter a bug, please open an issue on our [GitHub issue tracker](https
 - Your ComfyUI version and browser information.
 - Any relevant screenshots or error messages.
 
-### Suggesting Enhancements
-
-If you have an idea for a new feature or an improvement to an existing one, please open an issue on our [GitHub issue tracker](https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme/issues). Please include the following information:
-
-- A clear and descriptive title.
-- A detailed description of the proposed enhancement.
-- Any relevant mockups or examples.
-
 ### Pull Requests
 
-We welcome pull requests! If you'd like to contribute code, please follow these steps:
+We welcome pull requests!
 
 1. Fork the repository.
 2. Create a new branch for your changes (`git checkout -b feature/your-feature-name`).
@@ -33,19 +25,44 @@ We welcome pull requests! If you'd like to contribute code, please follow these 
 4. Push your changes to your fork (`git push origin feature/your-feature-name`).
 5. Open a pull request to the `main` branch of this repository.
 
-Please ensure your code follows the existing code style and that you've tested your changes.
+## Development Setup
 
-## Development
+The project has recently migrated to **TypeScript** for improved stability and developer experience.
 
-The project is a mix of Python and JavaScript.
+### Prerequisites
 
-- The Python code is located in the `__init__.py` file.
-- The JavaScript code is in the `js` directory.
+- [Node.js](https://nodejs.org/) (v18 or higher recommended)
+- [pnpm](https://pnpm.io/) (preferred), npm, or yarn
 
-When making changes, please ensure you are editing the source files.
+### Setup Instructions
 
-## Code of Conduct
+1.  Clone the repository into your `ComfyUI/custom_nodes` folder.
+2.  Install dependencies:
+    ```bash
+    pnpm install
+    ```
 
-By participating in this project, you are expected to uphold our [Code of Conduct](CODE_OF_CONDUCT.md).
+### Workflow Commands
+
+| Command | Description |
+| :--- | :--- |
+| `pnpm run dev` | Watch mode: Automatically rebuilds TypeScript to JavaScript on change. |
+| `pnpm run build` | One-time production build. |
+| `pnpm run typecheck` | Run the TypeScript compiler to check for type errors. |
+| `pnpm run test` | Run Unit and Integration tests using **Vitest**. |
+| `pnpm run test:e2e` | Run End-to-End tests using **Playwright**. |
+
+## Project Structure
+
+- **`src/`**: Contains the TypeScript source code. **Always edit files here.**
+- **`js/`**: Contains the compiled JavaScript files. (Do not edit these manually).
+- **`tests/`**: Contains End-to-End test suites.
+- **`__init__.py`**: ComfyUI entry point (Python).
+
+## Code Style
+
+- Use TypeScript for all new logic.
+- Ensure all tests pass before submitting a PR.
+- Document new features in the code and update the README if necessary.
 
 Thank you for your contributions!
