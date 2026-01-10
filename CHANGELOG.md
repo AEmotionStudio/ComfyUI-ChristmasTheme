@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.0] - 2026-01-09
+
+### Added
+- **Custom Snowflakes**: Full support for custom image uploads.
+- **Snowflake Presets**: Selection between Classic, Simple, Bold, and Random shapes.
+- **Mix Mode**: New "Mix Custom + Standard" option to blend images with vector shapes.
+- **Unified Layering**: Custom snowflakes now render in both background (Canvas) and foreground (Overlay) layers.
+
+### Refactored
+- **Architectural Cleanup**: Separated view logic from styles by extracting CSS to `sidebar.css`.
+- **DOM Helper**: Introduced a lightweight `el()` utility for declarative-style DOM construction, reducing codebase boilerplate.
+- **Unified Logic**: Consolidated snowflake generation logic between DOM and Canvas renderers.
+
+
 ## [1.3.0] - 2026-01-09
 
 ### Added
