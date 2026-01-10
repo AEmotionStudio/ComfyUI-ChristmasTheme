@@ -35,9 +35,9 @@
 
 **TypeScript Migration & Animation Fixes**
 
-*   **⚡ TypeScript Core**: Completely rewrote the codebase in TypeScript for improved stability and maintenance.
-*   **🧪 Robust Testing**: Added comprehensive Unit (Vitest) and End-to-End (Playwright) standard testing suites.
-*   **✨ Smoother Animations**: Fixed issue where background animations would pause when idle; added continuous render loop.
+*   **TypeScript Core**: Completely rewrote the codebase in TypeScript for improved stability and maintenance.
+*   **Robust Testing**: Added comprehensive Unit (Vitest) and End-to-End (Playwright) standard testing suites.
+*   **Smoother Animations**: Fixed issue where background animations would pause when idle; added continuous render loop.
 *   **New Year's Countdown**: A festive countdown to 2026!
 *   **Custom Snowflakes**: Upload your own snowflake images (logos, emojis, or photos) to create unique snowfall effects.
 *   **Mix Mode**: Blend custom images with standard vector snowflakes for a varied, festive look.
