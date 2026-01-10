@@ -1990,13 +1990,24 @@ function drawEnhancedBackground(ctx, width, height) {
         ctx.fillStyle = flake.color;
       }
       const snowflakeType = getSetting("ChristmasTheme.Snowflake.Type");
-      if (snowflakeType === "custom") {
+      if (snowflakeType === "custom" || snowflakeType === "mix_custom") {
         const snowSrc = getSetting("ChristmasTheme.Snowflake.CustomImage");
         if (snowSrc && snowSrc !== customSnowImageSrc) {
           customSnowImageSrc = snowSrc;
           customSnowImage = new Image();
+          customSnowImage.onload = () => {
+            if (app.canvas) app.canvas.setDirty(true, true);
+          };
           customSnowImage.src = snowSrc;
         }
+      }
+      let effectiveType = snowflakeType;
+      if (snowflakeType === "mix_custom") {
+        if (Math.floor(flake.x) % 2 === 0) {
+          effectiveType = "custom";
+        }
+      }
+      if (effectiveType === "custom") {
         if (customSnowImage && customSnowImage.complete && customSnowImage.naturalWidth > 0) {
           ctx.save();
           ctx.translate(flake.x + driftX, flake.y);
@@ -2007,7 +2018,7 @@ function drawEnhancedBackground(ctx, width, height) {
         } else {
           drawCrystalSnowflake(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
         }
-      } else if (snowflakeType && snowflakeType !== "random") {
+      } else if (effectiveType && effectiveType !== "random" && effectiveType !== "mix_custom") {
         if (snowflakeType === "classic") drawCrystalSnowflake(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
         else if (snowflakeType === "simple") drawEmoji2745(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
         else if (snowflakeType === "bold") drawEmoji2746(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);

@@ -222,7 +222,8 @@ const SETTINGS_CONFIG = {
           { value: "classic", text: "❄️ Classic" },
           { value: "simple", text: "❅ Simple" },
           { value: "bold", text: "❆ Bold" },
-          { value: "custom", text: "📁 Custom Image" }
+          { value: "custom", text: "📁 Custom Image" },
+          { value: "mix_custom", text: "🎲 Mix Custom + Standard" }
         ]
       },
       {
@@ -306,11 +307,11 @@ function createSelect(settingConfig) {
       updateCache(settingConfig.id, value);
       (_b = (_a = app.ui) == null ? void 0 : _a.settings) == null ? void 0 : _b.setSettingValue(settingConfig.id, value);
       (_c = app.canvas) == null ? void 0 : _c.setDirty(true, true);
-      if (value === "custom") {
+      if (value === "custom" || value === "mix_custom") {
         const uploadBtn = sel.nextElementSibling;
         if (uploadBtn) {
           uploadBtn.style.display = "block";
-          const imageKey = settingConfig.id.replace("ColorTheme", "CustomImage");
+          const imageKey = settingConfig.id.replace(/(Type|ColorTheme)$/, "CustomImage");
           if (!getSetting(imageKey)) {
             uploadBtn.click();
           }
@@ -326,10 +327,10 @@ function createSelect(settingConfig) {
       textContent: "📁",
       className: "christmas-upload-btn",
       title: "Upload Custom Snowflake",
-      style: { display: currentValue === "custom" ? "block" : "none" },
+      style: { display: currentValue === "custom" || currentValue === "mix_custom" ? "block" : "none" },
       onClick: () => handleFileUpload((b64) => {
         var _a, _b, _c;
-        const imageKey = settingConfig.id.replace("Type", "CustomImage");
+        const imageKey = settingConfig.id.replace(/(Type|ColorTheme)$/, "CustomImage");
         updateCache(imageKey, b64);
         (_b = (_a = app.ui) == null ? void 0 : _a.settings) == null ? void 0 : _b.setSettingValue(imageKey, b64);
         (_c = app.canvas) == null ? void 0 : _c.setDirty(true, true);
