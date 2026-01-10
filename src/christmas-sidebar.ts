@@ -239,7 +239,8 @@ const SETTINGS_CONFIG: SettingsConfigType = {
                     { value: "classic", text: "❄️ Classic" },
                     { value: "simple", text: "❅ Simple" },
                     { value: "bold", text: "❆ Bold" },
-                    { value: "custom", text: "📁 Custom Image" }
+                    { value: "custom", text: "📁 Custom Image" },
+                    { value: "mix_custom", text: "🎲 Mix Custom + Standard" }
                 ]
             },
             {
@@ -355,14 +356,12 @@ function createSelect(settingConfig: SettingConfig): HTMLElement {
             app.canvas?.setDirty(true, true);
 
             // Trigger upload if switching to custom
-            if (value === 'custom') {
-                // Discard 'Select' change event to wait for upload? 
-                // No, we set it to 'custom', then if they haven't uploaded yet or want to change, they click button.
-                // We can auto-click button if it's the first time
+            if (value === 'custom' || value === 'mix_custom') {
                 const uploadBtn = sel.nextElementSibling as HTMLElement;
                 if (uploadBtn) {
                     uploadBtn.style.display = 'block';
-                    const imageKey = settingConfig.id.replace('ColorTheme', 'CustomImage');
+                    // Robust replace for both 'Type' and 'ColorTheme'
+                    const imageKey = settingConfig.id.replace(/(Type|ColorTheme)$/, 'CustomImage');
                     if (!getSetting(imageKey)) {
                         uploadBtn.click();
                     }
@@ -381,9 +380,9 @@ function createSelect(settingConfig: SettingConfig): HTMLElement {
             textContent: '📁',
             className: 'christmas-upload-btn',
             title: 'Upload Custom Snowflake',
-            style: { display: currentValue === 'custom' ? 'block' : 'none' },
+            style: { display: (currentValue === 'custom' || currentValue === 'mix_custom') ? 'block' : 'none' },
             onClick: () => handleFileUpload((b64) => {
-                const imageKey = settingConfig.id.replace('Type', 'CustomImage');
+                const imageKey = settingConfig.id.replace(/(Type|ColorTheme)$/, 'CustomImage');
                 updateCache(imageKey, b64);
                 app.ui?.settings?.setSettingValue(imageKey, b64);
                 app.canvas?.setDirty(true, true);

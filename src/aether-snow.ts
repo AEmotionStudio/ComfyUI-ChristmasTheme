@@ -187,6 +187,8 @@ const SNOWFLAKE_TYPES: Record<string, SnowflakeGenerator> = {
 };
 
 const FLAKE_TYPE_NAMES = Object.keys(SNOWFLAKE_TYPES);
+let customSnowImageSrc: string | null = null;
+
 
 // ============================================================================
 // Helper Functions
@@ -326,7 +328,14 @@ app.registerExtension({
                     driftOffset: Math.random() * Math.PI * 2,
                     rotation: Math.random() * Math.PI * 2,
                     rotationSpeed: (Math.random() - 0.5) * 0.5,
-                    flakeType: FLAKE_TYPE_NAMES[Math.floor(Math.random() * FLAKE_TYPE_NAMES.length)],
+
+                    flakeType: (() => {
+                        const type = getSetting("ChristmasTheme.Snowflake.Type") as string;
+                        if (type === 'custom') return 'custom';
+                        if (type === 'mix_custom') return Math.random() > 0.5 ? 'custom' : FLAKE_TYPE_NAMES[Math.floor(Math.random() * FLAKE_TYPE_NAMES.length)];
+                        if (type && type !== 'random' && FLAKE_TYPE_NAMES.includes(type)) return type;
+                        return FLAKE_TYPE_NAMES[Math.floor(Math.random() * FLAKE_TYPE_NAMES.length)];
+                    })(),
                     element: null
                 };
             };
@@ -346,11 +355,33 @@ app.registerExtension({
 
                     const flake = document.createElement('div');
                     flake.className = 'snowflake';
-                    const svg = createSVGSnowflake(flakeData.size, flakeData.color, flakeData.flakeType);
-                    flake.appendChild(svg);
+
+                    // Handle Custom Image vs SVG
+                    if (flakeData.flakeType === 'custom') {
+                        const snowSrc = getSetting("ChristmasTheme.Snowflake.CustomImage") as string;
+                        if (snowSrc) {
+                            flake.style.width = String(flakeData.size * 2) + 'px'; // Larger for images
+                            flake.style.height = String(flakeData.size * 2) + 'px';
+                            flake.style.backgroundImage = `url(${snowSrc})`;
+                            flake.style.backgroundSize = 'contain';
+                            flake.style.backgroundRepeat = 'no-repeat';
+                            flake.style.backgroundPosition = 'center';
+                        } else {
+                            // Fallback if no image
+                            const svg = createSVGSnowflake(flakeData.size, flakeData.color, 'minimal');
+                            flake.appendChild(svg);
+                        }
+                    } else {
+                        const svg = createSVGSnowflake(flakeData.size, flakeData.color, flakeData.flakeType);
+                        flake.appendChild(svg);
+                    }
 
                     flake.style.opacity = String(flakeData.opacity);
-                    flake.style.filter = getGlowFilter(flakeData.color);
+                    // Only apply glow to non-images or if desired? 
+                    // Images might handle their own glow or look weird with drop-shadow filter on box
+                    if (flakeData.flakeType !== 'custom') {
+                        flake.style.filter = getGlowFilter(flakeData.color);
+                    }
                     container.appendChild(flake);
 
                     flakeData.element = flake;
@@ -402,7 +433,37 @@ app.registerExtension({
                         if (flake.y > height + 30) {
                             flake.y = -30;
                             flake.x = Math.random() * width;
-                            flake.flakeType = FLAKE_TYPE_NAMES[Math.floor(Math.random() * FLAKE_TYPE_NAMES.length)];
+                            // Re-roll type
+                            const type = getSetting("ChristmasTheme.Snowflake.Type") as string;
+                            if (type === 'custom') flake.flakeType = 'custom';
+                            else if (type === 'mix_custom') flake.flakeType = Math.random() > 0.5 ? 'custom' : FLAKE_TYPE_NAMES[Math.floor(Math.random() * FLAKE_TYPE_NAMES.length)];
+                            else if (type && type !== 'random' && FLAKE_TYPE_NAMES.includes(type)) flake.flakeType = type;
+                            else flake.flakeType = FLAKE_TYPE_NAMES[Math.floor(Math.random() * FLAKE_TYPE_NAMES.length)];
+
+                            // Update visual content if type changed or it's custom (to catch new images)
+                            if (flake.element) {
+                                flake.element.innerHTML = '';
+                                flake.element.style.backgroundImage = '';
+
+                                if (flake.flakeType === 'custom') {
+                                    const snowSrc = getSetting("ChristmasTheme.Snowflake.CustomImage") as string;
+                                    if (snowSrc) {
+                                        flake.element.style.width = String(flake.size * 2) + 'px';
+                                        flake.element.style.height = String(flake.size * 2) + 'px';
+                                        flake.element.style.backgroundImage = `url(${snowSrc})`;
+                                        flake.element.style.backgroundSize = 'contain';
+                                        flake.element.style.backgroundRepeat = 'no-repeat';
+                                    } else {
+                                        const svg = createSVGSnowflake(flake.size, flake.color, 'minimal');
+                                        flake.element.appendChild(svg);
+                                    }
+                                } else {
+                                    flake.element.style.width = ''; // Reset
+                                    flake.element.style.height = '';
+                                    const svg = createSVGSnowflake(flake.size, flake.color, flake.flakeType);
+                                    flake.element.appendChild(svg);
+                                }
+                            }
                             updateFlakeColor(flake);
                         }
                     }

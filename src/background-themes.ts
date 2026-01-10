@@ -2514,15 +2514,30 @@ function drawEnhancedBackground(ctx, width, height) {
             // Draw snowflake using appropriate style
             const snowflakeType = getSetting("ChristmasTheme.Snowflake.Type");
 
-            if (snowflakeType === 'custom') {
-                // Check/Load custom snowflake
+            // Check/Load custom snowflake if needed
+            if (snowflakeType === 'custom' || snowflakeType === 'mix_custom') {
                 const snowSrc = getSetting("ChristmasTheme.Snowflake.CustomImage") as string;
                 if (snowSrc && snowSrc !== customSnowImageSrc) {
                     customSnowImageSrc = snowSrc;
                     customSnowImage = new Image();
+                    customSnowImage.onload = () => {
+                        if (app.canvas) app.canvas.setDirty(true, true);
+                    };
                     customSnowImage.src = snowSrc;
                 }
+            }
 
+            // Determine effective type for this specific flake
+            let effectiveType = snowflakeType;
+            if (snowflakeType === 'mix_custom') {
+                // 50% chance of being custom, otherwise leave as 'mix_custom' to fall through
+                // Use flake.x as a stable seed to avoid flickering
+                if (Math.floor(flake.x) % 2 === 0) {
+                    effectiveType = 'custom';
+                }
+            }
+
+            if (effectiveType === 'custom') {
                 if (customSnowImage && customSnowImage.complete && customSnowImage.naturalWidth > 0) {
                     ctx.save();
                     ctx.translate(flake.x + driftX, flake.y);
@@ -2534,7 +2549,7 @@ function drawEnhancedBackground(ctx, width, height) {
                     // Fallback to minimal
                     drawCrystalSnowflake(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
                 }
-            } else if (snowflakeType && snowflakeType !== 'random') {
+            } else if (effectiveType && effectiveType !== 'random' && effectiveType !== 'mix_custom') {
                 // Specific type selected (override random assignment)
                 if (snowflakeType === 'classic') drawCrystalSnowflake(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
                 else if (snowflakeType === 'simple') drawEmoji2745(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);

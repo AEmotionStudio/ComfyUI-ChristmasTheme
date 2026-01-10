@@ -238,7 +238,13 @@ app.registerExtension({
           driftOffset: Math.random() * Math.PI * 2,
           rotation: Math.random() * Math.PI * 2,
           rotationSpeed: (Math.random() - 0.5) * 0.5,
-          flakeType: FLAKE_TYPE_NAMES[Math.floor(Math.random() * FLAKE_TYPE_NAMES.length)],
+          flakeType: (() => {
+            const type = getSetting("ChristmasTheme.Snowflake.Type");
+            if (type === "custom") return "custom";
+            if (type === "mix_custom") return Math.random() > 0.5 ? "custom" : FLAKE_TYPE_NAMES[Math.floor(Math.random() * FLAKE_TYPE_NAMES.length)];
+            if (type && type !== "random" && FLAKE_TYPE_NAMES.includes(type)) return type;
+            return FLAKE_TYPE_NAMES[Math.floor(Math.random() * FLAKE_TYPE_NAMES.length)];
+          })(),
           element: null
         };
       };
@@ -254,10 +260,27 @@ app.registerExtension({
           const flakeData = createFlakeEntity();
           const flake = document.createElement("div");
           flake.className = "snowflake";
-          const svg = createSVGSnowflake(flakeData.size, flakeData.color, flakeData.flakeType);
-          flake.appendChild(svg);
+          if (flakeData.flakeType === "custom") {
+            const snowSrc = getSetting("ChristmasTheme.Snowflake.CustomImage");
+            if (snowSrc) {
+              flake.style.width = String(flakeData.size * 2) + "px";
+              flake.style.height = String(flakeData.size * 2) + "px";
+              flake.style.backgroundImage = `url(${snowSrc})`;
+              flake.style.backgroundSize = "contain";
+              flake.style.backgroundRepeat = "no-repeat";
+              flake.style.backgroundPosition = "center";
+            } else {
+              const svg = createSVGSnowflake(flakeData.size, flakeData.color, "minimal");
+              flake.appendChild(svg);
+            }
+          } else {
+            const svg = createSVGSnowflake(flakeData.size, flakeData.color, flakeData.flakeType);
+            flake.appendChild(svg);
+          }
           flake.style.opacity = String(flakeData.opacity);
-          flake.style.filter = getGlowFilter(flakeData.color);
+          if (flakeData.flakeType !== "custom") {
+            flake.style.filter = getGlowFilter(flakeData.color);
+          }
           container.appendChild(flake);
           flakeData.element = flake;
           flakes.push(flakeData);
@@ -297,7 +320,33 @@ app.registerExtension({
             if (flake.y > height + 30) {
               flake.y = -30;
               flake.x = Math.random() * width;
-              flake.flakeType = FLAKE_TYPE_NAMES[Math.floor(Math.random() * FLAKE_TYPE_NAMES.length)];
+              const type = getSetting("ChristmasTheme.Snowflake.Type");
+              if (type === "custom") flake.flakeType = "custom";
+              else if (type === "mix_custom") flake.flakeType = Math.random() > 0.5 ? "custom" : FLAKE_TYPE_NAMES[Math.floor(Math.random() * FLAKE_TYPE_NAMES.length)];
+              else if (type && type !== "random" && FLAKE_TYPE_NAMES.includes(type)) flake.flakeType = type;
+              else flake.flakeType = FLAKE_TYPE_NAMES[Math.floor(Math.random() * FLAKE_TYPE_NAMES.length)];
+              if (flake.element) {
+                flake.element.innerHTML = "";
+                flake.element.style.backgroundImage = "";
+                if (flake.flakeType === "custom") {
+                  const snowSrc = getSetting("ChristmasTheme.Snowflake.CustomImage");
+                  if (snowSrc) {
+                    flake.element.style.width = String(flake.size * 2) + "px";
+                    flake.element.style.height = String(flake.size * 2) + "px";
+                    flake.element.style.backgroundImage = `url(${snowSrc})`;
+                    flake.element.style.backgroundSize = "contain";
+                    flake.element.style.backgroundRepeat = "no-repeat";
+                  } else {
+                    const svg = createSVGSnowflake(flake.size, flake.color, "minimal");
+                    flake.element.appendChild(svg);
+                  }
+                } else {
+                  flake.element.style.width = "";
+                  flake.element.style.height = "";
+                  const svg = createSVGSnowflake(flake.size, flake.color, flake.flakeType);
+                  flake.element.appendChild(svg);
+                }
+              }
               updateFlakeColor(flake);
             }
           }
