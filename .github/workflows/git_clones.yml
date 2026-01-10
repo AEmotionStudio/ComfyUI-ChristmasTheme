@@ -1,0 +1,115 @@
+name: Update Clone Count Badge
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Runs daily at midnight
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  update-badge:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Needed to push to the branch
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Fetch Traffic Stats and Save JSON
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.TRAFFIC_TOKEN }}
+          script: |
+            try {
+              const { owner, repo } = context.repo;
+              
+              // 1. Fetch Clones
+              const clones = await github.rest.repos.getClones({
+                owner,
+                repo,
+              });
+              
+              // 2. Fetch Views (Visitors)
+              const views = await github.rest.repos.getViews({
+                owner,
+                repo,
+              });
+
+              // 3. Fetch Releases for Smart Download Count
+              // We need to iterate through all releases to get the total count
+              let smartDownloadCount = 0;
+              let page = 1;
+              let releases = [];
+              
+              do {
+                const response = await github.rest.repos.listReleases({
+                  owner,
+                  repo,
+                  per_page: 100,
+                  page: page
+                });
+                releases = response.data;
+                
+                for (const release of releases) {
+                  let maxDownloads = 0;
+                  for (const asset of release.assets) {
+                    if (asset.download_count > maxDownloads) {
+                      maxDownloads = asset.download_count;
+                    }
+                  }
+                  smartDownloadCount += maxDownloads;
+                }
+                page++;
+              } while (releases.length === 100);
+              
+              const fs = require('fs');
+              const data = {
+                clones: {
+                  count: clones.data.count,
+                  uniques: clones.data.uniques,
+                },
+                views: {
+                  count: views.data.count,
+                  uniques: views.data.uniques,
+                },
+                downloads: {
+                  smart_count: smartDownloadCount
+                },
+                timestamp: new Date().toISOString()
+              };
+              
+              console.log('Stats fetched:', JSON.stringify(data));
+              
+              // Write to a generic stats file
+              fs.writeFileSync('traffic_stats.json', JSON.stringify(data, null, 2));
+              // Maintain the old file for backward compatibility if needed, or just switch everything
+              fs.writeFileSync('git_clones.json', JSON.stringify(data.clones, null, 2));
+              
+            } catch (error) {
+              console.error('Error fetching stats:', error);
+              process.exit(1); 
+            }
+
+      - name: Push to Badges Branch
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
+          # Stash the files
+          mv traffic_stats.json /tmp/traffic_stats.json
+          mv git_clones.json /tmp/git_clones.json
+          
+          # Fetch the badges branch or create it
+          git fetch origin badges:badges || true
+          git checkout badges || git checkout --orphan badges
+          
+          # Clean the branch to ensure it only has the JSON
+          git rm -rf .
+          
+          # Restore the files
+          mv /tmp/traffic_stats.json traffic_stats.json
+          mv /tmp/git_clones.json git_clones.json
+          
+          # Commit and push
+          git add traffic_stats.json git_clones.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update traffic statistics" && git push origin badges)
