@@ -227,9 +227,15 @@ let starInitialized = false;
 
 // Background snowflake entities (canvas-based, drawn behind nodes)
 let bgSnowflakeEntities: BgSnowflake[] = [];
+
 let bgSnowflakesInitialized = false;
 let lastBgColorScheme: string | null = null;
 let lastBgSnowflakeColorScheme: string | null = null;
+let customBgImage: HTMLImageElement | null = null;
+let customBgImageSrc: string | null = null;
+let customSnowImage: HTMLImageElement | null = null;
+let customSnowImageSrc: string | null = null;
+
 
 // Firework entities
 let fireworkRockets: FireworkRocket[] = [];
@@ -2326,9 +2332,10 @@ function drawEnhancedBackground(ctx, width, height) {
     const gradient = getGradient(ctx, height);
     if (gradient) {
         ctx.fillStyle = gradient;
-        ctx.globalAlpha = 0.3; // Subtle overlay
+        ctx.globalAlpha = 0.8;
         ctx.fillRect(0, 0, width, height);
     }
+
 
     // Draw stars by layer for proper depth effect (if enabled)
     const starsEnabled = getSetting("ChristmasTheme.Background.Stars");
@@ -2505,22 +2512,53 @@ function drawEnhancedBackground(ctx, width, height) {
             }
 
             // Draw snowflake using appropriate style
-            if (flake.flakeType === 'minimal') {
-                drawCrystalSnowflake(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
-            } else if (flake.flakeType === 'stellar') {
-                drawStellarSnowflake(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
-            } else if (flake.flakeType === 'emoji1') {
-                drawEmoji2744(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
-            } else if (flake.flakeType === 'emoji2') {
-                drawEmoji2745(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
-            } else if (flake.flakeType === 'emoji3') {
-                drawEmoji2746(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
-            } else if (flake.flakeType === 'dendrite') {
-                drawDendriteSnowflake(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
-            } else if (flake.flakeType === 'ornate') {
-                drawOrnateSnowflake(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
+            const snowflakeType = getSetting("ChristmasTheme.Snowflake.Type");
+
+            if (snowflakeType === 'custom') {
+                // Check/Load custom snowflake
+                const snowSrc = getSetting("ChristmasTheme.Snowflake.CustomImage") as string;
+                if (snowSrc && snowSrc !== customSnowImageSrc) {
+                    customSnowImageSrc = snowSrc;
+                    customSnowImage = new Image();
+                    customSnowImage.src = snowSrc;
+                }
+
+                if (customSnowImage && customSnowImage.complete && customSnowImage.naturalWidth > 0) {
+                    ctx.save();
+                    ctx.translate(flake.x + driftX, flake.y);
+                    ctx.rotate(flake.rotation);
+                    const size = flake.size * 2; // Slightly larger for images
+                    ctx.drawImage(customSnowImage, -size / 2, -size / 2, size, size);
+                    ctx.restore();
+                } else {
+                    // Fallback to minimal
+                    drawCrystalSnowflake(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
+                }
+            } else if (snowflakeType && snowflakeType !== 'random') {
+                // Specific type selected (override random assignment)
+                if (snowflakeType === 'classic') drawCrystalSnowflake(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
+                else if (snowflakeType === 'simple') drawEmoji2745(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
+                else if (snowflakeType === 'bold') drawEmoji2746(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
+                else drawCrystalSnowflake(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
             } else {
-                drawSnowflake(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
+                // Random mix (use type assigned to flake)
+                if (flake.flakeType === 'minimal') {
+                    drawCrystalSnowflake(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
+                } else if (flake.flakeType === 'stellar') {
+                    drawStellarSnowflake(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
+                } else if (flake.flakeType === 'emoji1') {
+                    drawEmoji2744(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
+                } else if (flake.flakeType === 'emoji2') {
+                    drawEmoji2745(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
+                } else if (flake.flakeType === 'emoji3') {
+                    drawEmoji2746(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
+                } else if (flake.flakeType === 'dendrite') {
+                    drawDendriteSnowflake(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
+                } else if (flake.flakeType === 'ornate') {
+                    drawOrnateSnowflake(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
+                } else {
+                    drawSnowflake(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
+                }
             }
         }
     }

@@ -27,15 +27,23 @@ const SETTING_DEFAULTS = {
     "ChristmasTheme.ChristmasEffects.Direction": 1,
     "ChristmasTheme.ChristmasEffects.BulbShape": "classic",
     "ChristmasTheme.Link Style": "spline",
+    "ChristmasTheme.ChristmasEffects.CustomImage": "", // Unused for now
+
 
     // Snowflake
     "ChristmasTheme.Snowflake.Enabled": 1,
     "ChristmasTheme.Snowflake.ColorScheme": "white",
     "ChristmasTheme.Snowflake.Glow": 10,
+    "ChristmasTheme.Snowflake.Type": "random",
+    "ChristmasTheme.Snowflake.CustomImage": "",
+
+
 
     // Background
     "ChristmasTheme.Background.Enabled": true,
     "ChristmasTheme.Background.ColorTheme": "classic",
+
+
     "ChristmasTheme.Background.Stars": true,
     "ChristmasTheme.Background.PartyMode": false,
     "ChristmasTheme.Background.ShootingStars": true,

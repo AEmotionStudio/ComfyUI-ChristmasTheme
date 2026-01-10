@@ -29,7 +29,10 @@
 *   **⚡ TypeScript Core**: Completely rewrote the codebase in TypeScript for improved stability and maintenance.
 *   **🧪 Robust Testing**: Added comprehensive Unit (Vitest) and End-to-End (Playwright) standard testing suites.
 *   **✨ Smoother Animations**: Fixed issue where background animations would pause when idle; added continuous render loop.
-*   **🎆 New Year 2027**: Updated countdown logic to automatically target the next year.
+*   **New Year's Countdown**: A festive countdown to 2026!
+*   **Custom Snowflakes**: Upload your own snowflake images to create unique snowfall effects.
+*   **Performance Mode**: Automatically detects low-fps situations and reduces particle count.
+
 
 > 📄 **See [CHANGELOG.md](CHANGELOG.md) for the complete version history.**
 
