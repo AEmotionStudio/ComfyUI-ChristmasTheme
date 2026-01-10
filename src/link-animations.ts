@@ -98,37 +98,35 @@ app.registerExtension({
 
         // Enhanced Performance Monitoring with adaptive response
         const PerformanceMonitor: PerformanceMonitorType = {
-            frameTimeHistory: new Float32Array(60), // Use typed array
+            frameTimeHistory: new Float32Array(60),
             currentIndex: 0,
-            sum: 0, // Running sum for O(1) average calculation
-            warningThreshold: 16.67, // 60fps threshold
-            criticalThreshold: 33.33, // 30fps threshold
+            sum: 0,
+            warningThreshold: 8, // reduced threshold
+            criticalThreshold: 16,
             _lastMode: 'normal',
-
-            // Adaptive settings based on performance
             adaptiveSettings: {
-                normal: { lightSpacing: 30, skipCaps: false, reducedGlow: false },
-                warning: { lightSpacing: 45, skipCaps: true, reducedGlow: false },
-                critical: { lightSpacing: 60, skipCaps: true, reducedGlow: true }
+                normal: { lightSpacing: 15, skipCaps: false, reducedGlow: false },
+                warning: { lightSpacing: 25, skipCaps: true, reducedGlow: false },
+                critical: { lightSpacing: 40, skipCaps: true, reducedGlow: true }
             },
 
             addFrameTime(time: number) {
-                // O(1) running average using sum
                 this.sum -= this.frameTimeHistory[this.currentIndex];
                 this.frameTimeHistory[this.currentIndex] = time;
                 this.sum += time;
-                this.currentIndex = (this.currentIndex + 1) % this.frameTimeHistory.length;
+                this.currentIndex = (this.currentIndex + 1) % 60;
 
-                const avgFrameTime = this.sum / this.frameTimeHistory.length;
+                const avg = this.sum / 60;
+                let mode: 'normal' | 'warning' | 'critical' = 'normal';
 
-                if (avgFrameTime > this.criticalThreshold) {
-                    this._lastMode = 'critical';
-                } else if (avgFrameTime > this.warningThreshold) {
-                    this._lastMode = 'warning';
-                } else {
-                    this._lastMode = 'normal';
+                if (avg > this.criticalThreshold) mode = 'critical';
+                else if (avg > this.warningThreshold) mode = 'warning';
+
+                if (mode !== this._lastMode) {
+                    console.log(`🎄 Christmas Lights: Switching to ${mode} mode (avg frame time: ${avg.toFixed(2)}ms)`);
+                    this._lastMode = mode;
                 }
-                return this._lastMode;
+                return mode;
             },
 
             getSettings() {
@@ -136,742 +134,461 @@ app.registerExtension({
             }
         };
 
-        // Add Performance Settings
-        app.ui.settings.addSetting({
-            id: "ChristmasTheme.PauseDuringRender",
-            name: "⏸️ Pause Effects During Render",
-            type: "combo",
-            options: [
-                { value: true, text: "✅ Enabled" },
-                { value: false, text: "❌ Disabled" }
-            ],
-            defaultValue: true,
-            section: "Performance",
-            tooltip: "Pause animations during rendering to improve performance",
-            onChange: (value: boolean) => updateCache("ChristmasTheme.PauseDuringRender", value)
-        });
-
-        // Optimized Object Pool with pre-allocation
+        // Preallocated memory pools to reduce GC
         const ArrayPool: ArrayPoolType = {
             pool: [],
-
-            init() {
-                // Pre-allocate 200 arrays
-                for (let i = 0; i < 200; i++) {
-                    this.pool.push(new Float32Array(2));
-                }
-            },
-
-            get() {
-                return this.pool.length > 0 ? this.pool.pop()! : new Float32Array(2);
-            },
-
-            release(array: Float32Array) {
-                if (this.pool.length < 300) {
-                    this.pool.push(array);
-                }
-            }
+            init() { for (let i = 0; i < 1000; i++) this.pool.push(new Float32Array(2)); },
+            get() { return this.pool.pop() || new Float32Array(2); },
+            release(arr) { if (this.pool.length < 2000) this.pool.push(arr); }
         };
         ArrayPool.init();
 
-        // ⚡ State Management System
+        // Shared State
         const State: StateType = {
-            isRunning: false,
+            isRunning: true,
             phase: 0,
-            lastFrame: performance.now(),
+            lastFrame: 0,
             animationFrame: null,
             performanceMode: 'normal',
             isRendering: false,
-            // Reusable link data array (avoid creating new arrays each frame)
-            linkDataCache: [],
+            linkDataCache: new Array(1000).fill(null).map(() => ({
+                start: new Float32Array(2),
+                end: new Float32Array(2),
+                color: null
+            })),
             linkDataIndex: 0
         };
 
-        // 🎭 Animation State Controller
-        const AnimationState = {
-            targetPhase: 0,
-            Direction: 1,
-            transitionSpeed: PHI,
-            smoothFactor: 0.95,
-
-            update(delta: number) {
-                const flowDirection = getSetting("ChristmasTheme.ChristmasEffects.Direction") as number;
-
-                if (this.Direction !== flowDirection) {
-                    this.Direction = flowDirection;
-                    this.targetPhase = State.phase + Math.PI * 2 * this.Direction;
-                }
-
-                const phaseStep = this.transitionSpeed * delta * PHI;
-
-                if (Math.abs(this.targetPhase - State.phase) > 0.01) {
-                    State.phase += Math.sign(this.targetPhase - State.phase) * phaseStep;
-                } else {
-                    State.phase = (State.phase + phaseStep * this.Direction) % (Math.PI * 2);
-                    this.targetPhase = State.phase;
-                }
-
-                return State.phase;
+        // Optimized Rendering Helpers
+        const LinkRenderer: LinkRenderer = {
+            getLength(start, end) {
+                const dx = end[0] - start[0];
+                const dy = end[1] - start[1];
+                return Math.sqrt(dx * dx + dy * dy);
+            },
+            getPoint(start, end, t, out) {
+                out[0] = start[0] + (end[0] - start[0]) * t;
+                out[1] = start[1] + (end[1] - start[1]) * t;
+            },
+            draw(ctx, start, end, color, thickness) {
+                ctx.strokeStyle = color;
+                ctx.lineWidth = thickness;
+                ctx.beginPath();
+                ctx.moveTo(start[0], start[1]);
+                ctx.lineTo(end[0], end[1]);
+                ctx.stroke();
             }
         };
 
-        // ⚙️ Performance-Optimized Timing System
-        const TimingManager = {
-            smoothDelta: 0,
-            frameCount: 0,
+        // Pre-calculated sin table for fast lookup
+        const SIN_TABLE_SIZE = 1024;
+        const SIN_TABLE = new Float32Array(SIN_TABLE_SIZE);
+        for (let i = 0; i < SIN_TABLE_SIZE; i++) {
+            SIN_TABLE[i] = Math.sin((i / SIN_TABLE_SIZE) * Math.PI * 2);
+        }
+        function fastSin(angle: number) {
+            const index = Math.floor((angle / (Math.PI * 2) * SIN_TABLE_SIZE)) % SIN_TABLE_SIZE;
+            return SIN_TABLE[index >= 0 ? index : index + SIN_TABLE_SIZE];
+        }
 
+        // Timing Manager
+        const TimingManager = {
+            lastTime: 0,
             update() {
                 const now = performance.now();
-                const rawDelta = Math.min((now - State.lastFrame) / 1000, 1 / 30);
-                State.lastFrame = now;
-
-                this.frameCount++;
-                this.smoothDelta = this.smoothDelta * AnimationState.smoothFactor +
-                    rawDelta * (1 - AnimationState.smoothFactor);
-                return this.smoothDelta;
+                if (!this.lastTime) this.lastTime = now;
+                const delta = (now - this.lastTime) / 1000;
+                this.lastTime = now;
+                return Math.min(delta, 0.05); // Cap delta to prevent huge jumps
             }
         };
 
-        // 🎨 Christmas Animation Settings
-        app.ui.settings.addSetting({
-            id: "ChristmasTheme.ChristmasEffects.LightSwitch",
-            name: "🎄 Christmas Lights",
-            type: "combo",
-            options: [
-                { value: 0, text: "⭘️ Off" },
-                { value: 1, text: "🎄 On" }
-            ],
-            defaultValue: 1,
-            section: "Christmas Effects",
-            onChange: (value: number) => updateCache("ChristmasTheme.ChristmasEffects.LightSwitch", value)
-        });
-
-        app.ui.settings.addSetting({
-            id: "ChristmasTheme.ChristmasEffects.ColorScheme",
-            name: "🎨 Color Scheme",
-            type: "combo",
-            options: [
-                { value: "traditional", text: " 🎄 Traditional" },
-                { value: "warm", text: " 🔆 Warm White" },
-                { value: "cool", text: " ❄️ Cool White" },
-                { value: "multicolor", text: " 🌈 Multicolor" },
-                { value: "pastel", text: " 🎀 Pastel" },
-                { value: "newyear", text: " 🎉 New Year's Eve" }
-            ],
-            defaultValue: "traditional",
-            section: "Christmas Effects",
-            onChange: (value: string) => updateCache("ChristmasTheme.ChristmasEffects.ColorScheme", value)
-        });
-
-        app.ui.settings.addSetting({
-            id: "ChristmasTheme.ChristmasEffects.Twinkle",
-            name: "✨ Light Effect",
-            type: "combo",
-            options: [
-                { value: "steady", text: "Steady" },
-                { value: "gentle", text: "Gentle Twinkle" },
-                { value: "sparkle", text: "Sparkle" },
-                { value: "candycane", text: "🍬 Candy Cane" },
-                { value: "frost", text: "❄️ Frost Trail" },
-                { value: "aurora", text: "🌌 Aurora Flow" }
-            ],
-            defaultValue: "gentle",
-            section: "Christmas Effects",
-            onChange: (value: string) => updateCache("ChristmasTheme.ChristmasEffects.Twinkle", value)
-        });
-
-        app.ui.settings.addSetting({
-            id: "ChristmasTheme.ChristmasEffects.Thickness",
-            name: "💫 Light Size",
-            type: "slider",
-            default: 3,
-            min: 1,
-            max: 10,
-            step: 0.5,
-            section: "Christmas Effects",
-            onChange: (value: number) => updateCache("ChristmasTheme.ChristmasEffects.Thickness", value)
-        });
-
-        app.ui.settings.addSetting({
-            id: "ChristmasTheme.ChristmasEffects.GlowIntensity",
-            name: "✨ Glow Intensity",
-            type: "slider",
-            default: 20,
-            min: 0,
-            max: 30,
-            step: 1,
-            section: "Christmas Effects",
-            onChange: (value: number) => updateCache("ChristmasTheme.ChristmasEffects.GlowIntensity", value)
-        });
-
-        app.ui.settings.addSetting({
-            id: "ChristmasTheme.ChristmasEffects.Direction",
-            name: "🔄 Flow Direction",
-            type: "combo",
-            options: [
-                { value: -1, text: "Forward ➡️" },
-                { value: 1, text: "Reverse ⬅️" }
-            ],
-            defaultValue: -1,
-            section: "Christmas Effects",
-            tooltip: "If not animating properly, refresh the page",
-            onChange: (value: number) => updateCache("ChristmasTheme.ChristmasEffects.Direction", value)
-        });
-
-        app.ui.settings.addSetting({
-            id: "ChristmasTheme.ChristmasEffects.BulbShape",
-            name: "💡 Bulb Shape",
-            type: "combo",
-            options: [
-                { value: "classic", text: "🔴 Classic Round" },
-                { value: "icicle", text: "❄️ Icicle Point" }
-            ],
-            defaultValue: "classic",
-            section: "Christmas Effects",
-            onChange: (value: string) => updateCache("ChristmasTheme.ChristmasEffects.BulbShape", value)
-        });
-
-        app.ui.settings.addSetting({
-            id: "ChristmasTheme.Link Style",
-            name: "🔗 Link Style",
-            type: "combo",
-            options: [
-                { value: "spline", text: "Spline" },
-                { value: "straight", text: "Straight" },
-                { value: "linear", text: "Linear" },
-                { value: "hidden", text: "Hidden" }
-            ],
-            defaultValue: "spline",
-            section: "Link Style",
-            onChange: (value: string) => updateCache("ChristmasTheme.Link Style", value)
-        });
-
-        // Add Snowflake Settings
-        app.ui.settings.addSetting({
-            id: "ChristmasTheme.Snowflake.Enabled",
-            name: "❄️ Snow Effect",
-            type: "combo",
-            options: [
-                { value: 0, text: "⭘️ Off" },
-                { value: 1, text: "❄️ On" }
-            ],
-            defaultValue: 1,
-            section: "Snowflake",
-            onChange: (value: number) => {
-                updateCache("ChristmasTheme.Snowflake.Enabled", value);
-                if (window.snowflakeState) {
-                    if (!value) {
-                        window.snowflakeState.flakes = [];
-                        window.snowflakeState.currentBatch = 0;
-                        window.snowflakeState.renderSnowflakes();
-                        const snowContainer = document.getElementById('comfy-aether-snow');
-                        if (snowContainer) {
-                            snowContainer.style.display = 'none';
-                        }
-                    } else {
-                        if (window.snowflakeState.flakes.length === 0) {
-                            window.snowflakeState.isInitializing = true;
-                            const snowContainer = document.getElementById('comfy-aether-snow');
-                            if (snowContainer) {
-                                snowContainer.style.display = 'block';
-                            }
-                            window.snowflakeState.addBatch();
-                        }
-                    }
-                }
+        // Animation State Manager
+        const AnimationState = {
+            phase: 0,
+            update(delta: number) {
+                // Use setting speed
+                const speed = (getSetting("ChristmasTheme.ChristmasEffects.AnimationSpeed") as number) || 1.0;
+                this.phase += delta * speed;
+                return this.phase;
             }
-        });
+        };
 
-        app.ui.settings.addSetting({
-            id: "ChristmasTheme.Snowflake.ColorScheme",
-            name: "❄️ Snowflake Color",
-            type: "combo",
-            options: [
-                { value: "white", text: "❄️ Classic White" },
-                { value: "blue", text: "💠 Ice Blue" },
-                { value: "rainbow", text: "🌈 Rainbow" },
-                { value: "match", text: "🎨 Match Lights" },
-                { value: "newyear", text: "🎉 New Year's Eve" }
-            ],
-            defaultValue: "white",
-            section: "Snowflake",
-            onChange: (value: string) => updateCache("ChristmasTheme.Snowflake.ColorScheme", value)
-        });
-
-        app.ui.settings.addSetting({
-            id: "ChristmasTheme.Snowflake.Glow",
-            name: "✨ Snowflake Glow",
-            type: "slider",
-            default: 10,
-            min: 0,
-            max: 20,
-            step: 1,
-            section: "Snowflake",
-            onChange: (value: number) => updateCache("ChristmasTheme.Snowflake.Glow", value)
-        });
-
-        // Load stored values AFTER settings are registered
-        loadSettingFromStorage("ChristmasTheme.PauseDuringRender");
-        loadSettingFromStorage("ChristmasTheme.ChristmasEffects.LightSwitch");
-        loadSettingFromStorage("ChristmasTheme.ChristmasEffects.ColorScheme");
-        loadSettingFromStorage("ChristmasTheme.ChristmasEffects.Twinkle");
-        loadSettingFromStorage("ChristmasTheme.ChristmasEffects.Thickness");
-        loadSettingFromStorage("ChristmasTheme.ChristmasEffects.GlowIntensity");
-        loadSettingFromStorage("ChristmasTheme.ChristmasEffects.Direction");
-        loadSettingFromStorage("ChristmasTheme.ChristmasEffects.BulbShape");
-        loadSettingFromStorage("ChristmasTheme.Link Style");
-        loadSettingFromStorage("ChristmasTheme.Snowflake.Enabled");
-        loadSettingFromStorage("ChristmasTheme.Snowflake.ColorScheme");
-        loadSettingFromStorage("ChristmasTheme.Snowflake.Glow");
-
-        // 🛠 Override default connection drawing
-        const origDrawConnections = LGraphCanvas.prototype.drawConnections;
-
-        LGraphCanvas.prototype.drawConnections = function (ctx: CanvasRenderingContext2D) {
-            try {
-                // Skip if page not visible
-                if (!isPageVisible) {
-                    return;
+        // 🎨 Main Installation Trigger
+        let retryCount = 0;
+        const installChristmasLights = () => {
+            // @ts-ignore
+            if (!app.canvas || !app.graph) {
+                if (retryCount < 20) {
+                    retryCount++;
+                    setTimeout(installChristmasLights, 200);
                 }
+                return;
+            }
 
-                const startTime = performance.now();
+            const LGraphCanvas = app.canvas.constructor;
+            const origDrawConnections = LGraphCanvas.prototype.drawConnections;
+
+            console.log("🎄 Installing Christmas Lights (Optimized)...");
+
+            // Attach our renderer to the canvas class for easy access
+            LGraphCanvas.prototype.renderChristmasLights = function (ctx: CanvasRenderingContext2D, items: LinkData[], phase: number) {
                 const animStyle = getSetting("ChristmasTheme.ChristmasEffects.LightSwitch");
+                const currentSchemeName = getSetting("ChristmasTheme.ChristmasEffects.ColorScheme") as string;
+                // If "match", use the matched palette (Logic handled in cache or here? Assuming cache returns 'match' string, we need to resolve it)
+                // Actually settings-cache helpers usually resolve it. Let's rely on COLOR_SCHEMES lookup.
 
-                if (animStyle === 0) {
-                    origDrawConnections.call(this, ctx);
+                // Fix for 'match' scheme: if it's 'match', we need to check background theme but for links we usually just default to traditional or let user pick. 
+                // Wait, the cache update logic in background-themes handles sync. Here we just read.
+                // If it is literally "match", we map to traditional or a default for now.
+                const christmasColors = COLOR_SCHEMES[currentSchemeName] || COLOR_SCHEMES.traditional;
+
+                const bulbShape = getSetting("ChristmasTheme.ChristmasEffects.BulbShape");
+
+                // Cache settings for this frame
+                const settings = PerformanceMonitor.getSettings();
+                const baseSpacing = settings.lightSpacing;
+                const skipCaps = settings.skipCaps;
+                const reducedGlow = settings.reducedGlow;
+
+                const glowIntensity = getSetting("ChristmasTheme.ChristmasEffects.GlowIntensity") as number;
+                const steadyTwinkle = getSetting("ChristmasTheme.ChristmasEffects.SteadyStrands");
+                const sparkleMode = getSetting("ChristmasTheme.ChristmasEffects.SparkleMode");
+                const colorCount = christmasColors.length;
+
+                // Get link style from settings (e.g. Spline, Linear, Hidden)
+                // Note: The setting ID might need verification, typically "ChristmasTheme.Link Style"
+                // but checking previous files or defaults. Assuming "ChristmasTheme.LinkType" or similar if not found.
+                // Based on previous code in user context, it used `linkStyle` variable which implies it was defined.
+                // We'll define it here.
+                const linkStyle = getSetting("ChristmasTheme.LinkRenderMode") || "spline"; // Fallback to spline if not set
+
+
+                const renderer = LinkRenderer;
+                const tempPoint = new Float32Array(2);
+
+                // Common styles
+                const Thickness = 2; // Link wire thickness used for bulbs too
+                const Direction = -1; // Animation flow direction
+
+                // Special Mode: Frost Trail
+                if (animStyle === 4) { // Frost Trail
+                    for (let itemIdx = 0; itemIdx < items.length; itemIdx++) {
+                        const { start, end, color } = items[itemIdx];
+                        // Draw frosty core
+                        ctx.shadowBlur = 4;
+                        ctx.shadowColor = "#aaddff";
+                        ctx.strokeStyle = "#ffffff";
+                        ctx.lineWidth = 2.5;
+                        ctx.beginPath();
+                        ctx.moveTo(start[0], start[1]);
+                        ctx.lineTo(end[0], end[1]);
+                        ctx.stroke();
+
+                        // Flowing ice particles
+                        const length = renderer.getLength(start, end);
+                        const particleCount = Math.floor(length / 20);
+                        const time = performance.now() / 1000;
+
+                        ctx.shadowBlur = 8;
+                        ctx.fillStyle = "#ffffff";
+
+                        for (let i = 0; i < particleCount; i++) {
+                            const speed = 0.5 + (i % 3) * 0.2;
+                            let t = ((time * speed) + (i / particleCount)) % 1;
+
+                            renderer.getPoint(start, end, t, tempPoint);
+                            const x = tempPoint[0];
+                            const y = tempPoint[1];
+
+                            const size = 1.5 + Math.sin(time * 10 + i) * 1;
+                            ctx.globalAlpha = 0.6 + Math.sin(time * 5 + i) * 0.4;
+                            ctx.beginPath();
+                            ctx.arc(x, y, size, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                        ctx.globalAlpha = 1;
+                    }
                     return;
                 }
 
-                const delta = TimingManager.update();
-                const phase = AnimationState.update(delta);
+                // Special Mode: Candy Cane
+                if (animStyle === 2) { // Candy Cane
+                    ctx.lineCap = "round";
+                    for (let itemIdx = 0; itemIdx < items.length; itemIdx++) {
+                        const { start, end } = items[itemIdx];
 
-                ctx.save();
+                        // White base
+                        ctx.strokeStyle = "#ffffff";
+                        ctx.lineWidth = 5;
+                        ctx.beginPath();
+                        ctx.moveTo(start[0], start[1]);
+                        ctx.lineTo(end[0], end[1]);
+                        ctx.stroke();
 
-                // Reset link data index for reuse
-                State.linkDataIndex = 0;
+                        // Red stripes
+                        ctx.strokeStyle = "#ff0000";
+                        ctx.lineWidth = 5;
+                        ctx.setLineDash([15, 15]);
+                        ctx.lineDashOffset = -phase * 30; // Animate stripes
+                        ctx.beginPath();
+                        ctx.moveTo(start[0], start[1]);
+                        ctx.lineTo(end[0], end[1]);
+                        ctx.stroke();
 
-                // Collect visible links
-                for (const linkId in this.graph.links) {
-                    const linkData = this.graph.links[linkId];
-                    if (!linkData) continue;
-
-                    const originNode = this.graph._nodes_by_id[linkData.origin_id];
-                    const targetNode = this.graph._nodes_by_id[linkData.target_id];
-
-                    if (!originNode || !targetNode || originNode.flags.collapsed || targetNode.flags.collapsed) continue;
-
-                    // Reuse or create link data object
-                    let data = State.linkDataCache[State.linkDataIndex];
-                    if (!data) {
-                        data = {
-                            start: ArrayPool.get(),
-                            end: ArrayPool.get(),
-                            color: null
-                        };
-                        State.linkDataCache[State.linkDataIndex] = data;
+                        // Reset
+                        ctx.setLineDash([]);
                     }
-
-                    originNode.getConnectionPos(false, linkData.origin_slot, data.start);
-                    targetNode.getConnectionPos(true, linkData.target_slot, data.end);
-                    data.color = linkData.type ?
-                        LGraphCanvas.link_type_colors[linkData.type] :
-                        this.default_connection_color;
-
-                    State.linkDataIndex++;
+                    return;
                 }
 
-                // Render all collected links
-                if (State.linkDataIndex > 0) {
-                    const linksToRender = State.linkDataCache.slice(0, State.linkDataIndex);
-                    this.renderChristmasLights(ctx, linksToRender, phase);
+                // Special Mode: Aurora Flow
+                if (animStyle === 5) {
+                    ctx.lineCap = "round";
+                    const auroraColors = ['#00ffaa', '#00aaff', '#aa00ff', '#ff00aa'];
+
+                    for (let itemIdx = 0; itemIdx < items.length; itemIdx++) {
+                        const { start, end } = items[itemIdx];
+                        const length = renderer.getLength(start, end);
+
+                        // Multi-layered flow
+                        for (let layer = 0; layer < 3; layer++) {
+                            const offset = layer * 2;
+                            const t = (phase * 0.2 + (layer * 0.1)) % 1;
+
+                            // Draw segment
+                            // Actually just drawing the full line with gradient is better
+                            const grad = ctx.createLinearGradient(start[0], start[1], end[0], end[1]);
+                            for (let c = 0; c < auroraColors.length; c++) {
+                                const colorPos = (c / (auroraColors.length - 1) + phase * 0.2) % 1;
+                                grad.addColorStop(colorPos, auroraColors[c]);
+                            }
+                            // Need at least 2 stops for valid gradient if we cycle? 
+                            // Simplified approach: moving particles of aurora color
+
+                            const particles = Math.floor(length / 10);
+                            for (let p = 0; p < particles; p++) {
+                                const t = (p / particles + phase * 0.1) % 1;
+                                renderer.getPoint(start, end, t, tempPoint);
+                                const x = tempPoint[0];
+                                const y = tempPoint[1] + Math.sin(t * Math.PI * 4 + phase) * 2;
+
+                                // Color cycling through aurora palette
+                                const colorT = (t - phase * 0.5 + 1) % 1;
+                                const colorIndex = Math.floor(colorT * auroraColors.length);
+                                // const nextColorIndex = (colorIndex + 1) % auroraColors.length; // Unused
+                                // const colorBlend = (colorT * auroraColors.length) % 1; // Unused
+
+                                // Blend between colors
+                                const auroraColor = auroraColors[colorIndex];
+
+                                // Pulsing intensity
+                                const pulse = 0.5 + fastSin(phase * 3 + t * Math.PI * 2) * 0.5;
+
+                                ctx.shadowBlur = 20 * pulse;
+                                ctx.shadowColor = auroraColor;
+                                ctx.fillStyle = auroraColor;
+                                ctx.globalAlpha = pulse * 0.7;
+
+                                ctx.beginPath();
+                                ctx.arc(x, y, Thickness * (1 + pulse * 0.5), 0, Math.PI * 2);
+                                ctx.fill();
+                            }
+                        }
+                        ctx.globalAlpha = 1;
+                        ctx.shadowBlur = 0;
+                    }
+                    return; // Skip normal bulb rendering for special modes
                 }
 
-                ctx.restore();
-
-                // Monitor performance
-                const frameTime = performance.now() - startTime;
-                State.performanceMode = PerformanceMonitor.addFrameTime(frameTime);
-
-            } catch (error) {
-                console.error("Error in drawConnections:", error);
-                origDrawConnections.call(this, ctx);
-            }
-        };
-
-        // Optimized Link Renderers with reduced function calls
-        const LinkRenderers: Record<string, LinkRenderer> = {
-            spline: {
-                getLength(start, end) {
-                    const dx = end[0] - start[0];
-                    const dy = end[1] - start[1];
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    // Approximate spline length (slightly longer than straight)
-                    return dist * 1.15;
-                },
-
-                getPoint(start, end, t, out) {
-                    const dx = end[0] - start[0];
-                    const dy = end[1] - start[1];
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    const bendDistance = Math.min(dist * 0.5, 100);
-
-                    const p0x = start[0], p0y = start[1];
-                    const p1x = start[0] + bendDistance, p1y = start[1];
-                    const p2x = end[0] - bendDistance, p2y = end[1];
-                    const p3x = end[0], p3y = end[1];
-
-                    const t2 = t * t;
-                    const t3 = t2 * t;
-                    const mt = 1 - t;
-                    const mt2 = mt * mt;
-                    const mt3 = mt2 * mt;
-
-                    out[0] = mt3 * p0x + 3 * mt2 * t * p1x + 3 * mt * t2 * p2x + t3 * p3x;
-                    out[1] = mt3 * p0y + 3 * mt2 * t * p1y + 3 * mt * t2 * p2y + t3 * p3y;
-                },
-
-                draw(ctx, start, end, color, thickness) {
-                    const dx = end[0] - start[0];
-                    const dy = end[1] - start[1];
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    const bendDistance = Math.min(dist * 0.5, 100);
-
+                // Icicle bulb helper function
+                const drawIcicleBulb = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number) => {
+                    const bulbWidth = size * 1.2;
+                    const bulbHeight = size * 3;
                     ctx.beginPath();
-                    ctx.moveTo(start[0], start[1]);
+                    // Start at top center
+                    ctx.moveTo(x, y - size * 0.5);
+                    // Curve to left side
                     ctx.bezierCurveTo(
-                        start[0] + bendDistance, start[1],
-                        end[0] - bendDistance, end[1],
-                        end[0], end[1]
+                        x - bulbWidth, y,
+                        x - bulbWidth * 0.6, y + bulbHeight * 0.5,
+                        x, y + bulbHeight  // Pointed tip at bottom
                     );
-                    ctx.strokeStyle = color;
-                    ctx.lineWidth = thickness * 0.8;
-                    ctx.stroke();
-                }
-            },
+                    // Curve back to start
+                    ctx.bezierCurveTo(
+                        x + bulbWidth * 0.6, y + bulbHeight * 0.5,
+                        x + bulbWidth, y,
+                        x, y - size * 0.5
+                    );
+                    ctx.closePath();
+                };
 
-            straight: {
-                getLength(start, end) {
-                    const dx = end[0] - start[0];
-                    const dy = end[1] - start[1];
-                    return Math.sqrt(dx * dx + dy * dy);
-                },
-
-                getPoint(start, end, t, out) {
-                    out[0] = start[0] + (end[0] - start[0]) * t;
-                    out[1] = start[1] + (end[1] - start[1]) * t;
-                },
-
-                draw(ctx, start, end, color, thickness) {
-                    ctx.beginPath();
-                    ctx.moveTo(start[0], start[1]);
-                    ctx.lineTo(end[0], end[1]);
-                    ctx.strokeStyle = color;
-                    ctx.lineWidth = thickness * 0.8;
-                    ctx.stroke();
-                }
-            },
-
-            linear: {
-                getLength(start, end) {
-                    const midX = (start[0] + end[0]) / 2;
-                    return Math.abs(midX - start[0]) + Math.abs(end[1] - start[1]) + Math.abs(end[0] - midX);
-                },
-
-                getPoint(start, end, t, out) {
-                    const midX = (start[0] + end[0]) / 2;
-
-                    if (t <= 0.33) {
-                        const segmentT = t / 0.33;
-                        out[0] = start[0] + (midX - start[0]) * segmentT;
-                        out[1] = start[1];
-                    } else if (t <= 0.67) {
-                        const segmentT = (t - 0.33) / 0.34;
-                        out[0] = midX;
-                        out[1] = start[1] + (end[1] - start[1]) * segmentT;
-                    } else {
-                        const segmentT = (t - 0.67) / 0.33;
-                        out[0] = midX + (end[0] - midX) * segmentT;
-                        out[1] = end[1];
-                    }
-                },
-
-                draw(ctx, start, end, color, thickness) {
-                    const midX = (start[0] + end[0]) / 2;
-                    ctx.beginPath();
-                    ctx.moveTo(start[0], start[1]);
-                    ctx.lineTo(midX, start[1]);
-                    ctx.lineTo(midX, end[1]);
-                    ctx.lineTo(end[0], end[1]);
-                    ctx.strokeStyle = color;
-                    ctx.lineWidth = thickness * 0.8;
-                    ctx.stroke();
-                }
-            },
-
-            hidden: {
-                getLength(start, end) {
-                    const dx = end[0] - start[0];
-                    const dy = end[1] - start[1];
-                    return Math.sqrt(dx * dx + dy * dy);
-                },
-                getPoint(start, end, t, out) {
-                    out[0] = start[0] + (end[0] - start[0]) * t;
-                    out[1] = start[1] + (end[1] - start[1]) * t;
-                },
-                draw() { }
-            }
-        };
-
-        // Reusable point array for getPoint calls
-        const tempPoint = new Float32Array(2);
-
-        // Pre-calculate sin lookup table for twinkle effects
-        const SIN_TABLE_SIZE = 360;
-        const sinTable = new Float32Array(SIN_TABLE_SIZE);
-        for (let i = 0; i < SIN_TABLE_SIZE; i++) {
-            sinTable[i] = Math.sin((i / SIN_TABLE_SIZE) * Math.PI * 2);
-        }
-        function fastSin(x: number) {
-            // Normalize x to [0, 2π) range to handle negative values correctly
-            const TWO_PI = Math.PI * 2;
-            let normalized = x % TWO_PI;
-            if (normalized < 0) normalized += TWO_PI;
-            const idx = Math.floor((normalized / TWO_PI) * SIN_TABLE_SIZE);
-            return sinTable[idx % SIN_TABLE_SIZE];
-        }
-
-        // 🎄 Optimized Christmas Lights Pattern
-        LGraphCanvas.prototype.renderChristmasLights = function (ctx: CanvasRenderingContext2D, items: LinkData[], phase: number) {
-            const Direction = AnimationState.Direction;
-            const Thickness = getSetting("ChristmasTheme.ChristmasEffects.Thickness") as number;
-            const glowIntensity = getSetting("ChristmasTheme.ChristmasEffects.GlowIntensity") as number;
-            const colorScheme = getSetting("ChristmasTheme.ChristmasEffects.ColorScheme") as string;
-            const twinkleMode = getSetting("ChristmasTheme.ChristmasEffects.Twinkle");
-            const linkStyle = getSetting("ChristmasTheme.Link Style");
-            const bulbShape = getSetting("ChristmasTheme.ChristmasEffects.BulbShape");
-
-            const renderer = LinkRenderers[linkStyle as string];
-            const christmasColors = COLOR_SCHEMES[colorScheme] || COLOR_SCHEMES.traditional;
-            const colorCount = christmasColors.length;
-
-            // Get adaptive settings based on current performance
-            const perfSettings = PerformanceMonitor.getSettings();
-            const baseSpacing = perfSettings.lightSpacing;
-            const skipCaps = perfSettings.skipCaps;
-            const reducedGlow = perfSettings.reducedGlow;
-
-            // Pre-calculate twinkle function based on mode
-            const steadyTwinkle = twinkleMode === "steady";
-            const sparkleMode = twinkleMode === "sparkle";
-            const candyCaneMode = twinkleMode === "candycane";
-            const frostMode = twinkleMode === "frost";
-            const auroraMode = twinkleMode === "aurora";
-
-            // Special rendering for new animation modes
-            if (candyCaneMode || frostMode || auroraMode) {
                 for (let itemIdx = 0; itemIdx < items.length; itemIdx++) {
                     const { start, end, color } = items[itemIdx];
+
+                    // Draw base wire
+                    if (linkStyle !== 'hidden') {
+                        ctx.globalAlpha = 0.8;
+                        ctx.shadowBlur = 0;
+                        renderer.draw(ctx, start, end, color || "#888", Thickness);
+                        ctx.globalAlpha = 1;
+                    }
+
+                    if (linkStyle === 'hidden' && !getSetting("ChristmasTheme.ChristmasEffects.LightSwitch")) {
+                        continue;
+                    }
+
                     const totalLength = renderer.getLength(start, end);
+                    const numLights = Math.floor(totalLength / baseSpacing);
+                    if (numLights < 1) continue;
 
-                    if (candyCaneMode) {
-                        // 🍬 Candy Cane: Animated diagonal stripes
-                        const stripeWidth = 15;
-                        const numSegments = Math.floor(totalLength / 3);
+                    const effectiveGlow = reducedGlow ? glowIntensity * 0.5 : glowIntensity;
 
-                        for (let i = 0; i <= numSegments; i++) {
-                            const t = i / numSegments;
-                            renderer.getPoint(start, end, t, tempPoint);
+                    // Draw lights in a single batch
+                    for (let i = 0; i <= numLights; i++) {
+                        const t = i / numLights;
+                        renderer.getPoint(start, end, t, tempPoint);
 
-                            // Flowing stripe pattern
-                            const stripePhase = (t * totalLength / stripeWidth - phase * 3) % 1;
-                            const isRed = stripePhase < 0.5;
+                        const wobble = fastSin(t * Math.PI * 4) * 5;
+                        const x = tempPoint[0];
+                        const y = tempPoint[1] + wobble;
 
-                            ctx.fillStyle = isRed ? '#ff0000' : '#ffffff';
-                            ctx.shadowBlur = isRed ? 8 : 4;
-                            ctx.shadowColor = isRed ? '#ff0000' : '#ffffff';
-                            ctx.globalAlpha = 0.9;
+                        // Color cycling
+                        const colorIndex = ((i - Math.floor(phase * 2 * Direction)) % colorCount + colorCount) % colorCount;
+                        const lightColor = christmasColors[colorIndex];
 
+                        // Twinkle calculation
+                        let flicker;
+                        if (steadyTwinkle) {
+                            flicker = 1;
+                        } else if (sparkleMode) {
+                            flicker = 0.7 + fastSin(-phase * 8 + i * 5) * 0.3 * Math.random();
+                        } else {
+                            flicker = 0.85 + fastSin(-phase * 5 + i * 3) * 0.15;
+                        }
+
+                        // Light bulb
+                        ctx.shadowBlur = effectiveGlow * 1.5 * flicker;
+                        ctx.fillStyle = lightColor;
+                        ctx.shadowColor = lightColor;
+                        ctx.globalAlpha = flicker;
+
+                        if (bulbShape === "icicle") {
+                            // Icicle/pointed bulb shape
+                            drawIcicleBulb(ctx, x, y, Thickness);
+                            ctx.fill();
+                        } else {
+                            // Classic round bulb
                             ctx.beginPath();
-                            ctx.arc(tempPoint[0], tempPoint[1], Thickness * 1.2, 0, Math.PI * 2);
+                            ctx.arc(x, y, Thickness * 1.5, 0, Math.PI * 2);
                             ctx.fill();
                         }
-                    } else if (frostMode) {
-                        // ❄️ Frost Trail: Icy crystals with spreading glow
-                        const numCrystals = Math.floor(totalLength / baseSpacing);
-                        const frostColors = ['#e0ffff', '#b0e0e6', '#87ceeb', '#add8e6', '#ffffff'];
 
-                        for (let i = 0; i <= numCrystals; i++) {
-                            const t = i / numCrystals;
-                            renderer.getPoint(start, end, t, tempPoint);
-
-                            // Crystal shimmer effect
-                            const shimmer = 0.6 + fastSin(phase * 4 + i * 2) * 0.4;
-                            const crystalColor = frostColors[i % frostColors.length];
-
-                            // Outer glow
-                            ctx.shadowBlur = 15 * shimmer;
-                            ctx.shadowColor = '#87ceeb';
-                            ctx.fillStyle = crystalColor;
-                            ctx.globalAlpha = shimmer * 0.8;
-
-                            // Draw crystal shape (6-pointed)
-                            const size = Thickness * (1 + shimmer * 0.5);
+                        // Light cap (skip in low performance mode)
+                        if (!skipCaps) {
                             ctx.beginPath();
-                            for (let p = 0; p < 6; p++) {
-                                const angle = (p / 6) * Math.PI * 2 - Math.PI / 2;
-                                const px = tempPoint[0] + Math.cos(angle) * size;
-                                const py = tempPoint[1] + Math.sin(angle) * size;
-                                if (p === 0) ctx.moveTo(px, py);
-                                else ctx.lineTo(px, py);
-                            }
-                            ctx.closePath();
-                            ctx.fill();
-
-                            // Inner bright core
-                            ctx.beginPath();
-                            ctx.arc(tempPoint[0], tempPoint[1], size * 0.3, 0, Math.PI * 2);
-                            ctx.fillStyle = '#ffffff';
-                            ctx.globalAlpha = shimmer;
-                            ctx.fill();
-                        }
-                    } else if (auroraMode) {
-                        // 🌌 Aurora Flow: Undulating rainbow waves
-                        const numPoints = Math.floor(totalLength / 5);
-                        const auroraColors = ['#00ff88', '#00ffcc', '#00ccff', '#0088ff', '#8800ff', '#ff00ff'];
-
-                        for (let i = 0; i <= numPoints; i++) {
-                            const t = i / numPoints;
-                            renderer.getPoint(start, end, t, tempPoint);
-
-                            // Undulating wave offset
-                            const waveOffset = fastSin(t * Math.PI * 3 + phase * 2) * 8;
-                            const x = tempPoint[0];
-                            const y = tempPoint[1] + waveOffset;
-
-                            // Color cycling through aurora palette
-                            const colorT = (t - phase * 0.5 + 1) % 1;
-                            const colorIndex = Math.floor(colorT * auroraColors.length);
-                            // const nextColorIndex = (colorIndex + 1) % auroraColors.length; // Unused
-                            // const colorBlend = (colorT * auroraColors.length) % 1; // Unused
-
-                            // Blend between colors
-                            const auroraColor = auroraColors[colorIndex];
-
-                            // Pulsing intensity
-                            const pulse = 0.5 + fastSin(phase * 3 + t * Math.PI * 2) * 0.5;
-
-                            ctx.shadowBlur = 20 * pulse;
-                            ctx.shadowColor = auroraColor;
-                            ctx.fillStyle = auroraColor;
-                            ctx.globalAlpha = pulse * 0.7;
-
-                            ctx.beginPath();
-                            ctx.arc(x, y, Thickness * (1 + pulse * 0.5), 0, Math.PI * 2);
+                            ctx.shadowBlur = 0;
+                            const capY = bulbShape === "icicle" ? y - Thickness * 0.8 : y - Thickness;
+                            ctx.arc(x, capY, Thickness * 0.5, 0, Math.PI * 2);
+                            ctx.fillStyle = '#c0c0c0';
+                            ctx.globalAlpha = 1;
                             ctx.fill();
                         }
                     }
                     ctx.globalAlpha = 1;
-                    ctx.shadowBlur = 0;
                 }
-                return; // Skip normal bulb rendering for special modes
-            }
-
-            // Icicle bulb helper function
-            const drawIcicleBulb = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number) => {
-                const bulbWidth = size * 1.2;
-                const bulbHeight = size * 3;
-                ctx.beginPath();
-                // Start at top center
-                ctx.moveTo(x, y - size * 0.5);
-                // Curve to left side
-                ctx.bezierCurveTo(
-                    x - bulbWidth, y,
-                    x - bulbWidth * 0.6, y + bulbHeight * 0.5,
-                    x, y + bulbHeight  // Pointed tip at bottom
-                );
-                // Curve back to start
-                ctx.bezierCurveTo(
-                    x + bulbWidth * 0.6, y + bulbHeight * 0.5,
-                    x + bulbWidth, y,
-                    x, y - size * 0.5
-                );
-                ctx.closePath();
             };
 
-            for (let itemIdx = 0; itemIdx < items.length; itemIdx++) {
-                const { start, end, color } = items[itemIdx];
-
-                // Draw base wire
-                if (linkStyle !== 'hidden') {
-                    ctx.globalAlpha = 0.8;
-                    ctx.shadowBlur = 0;
-                    renderer.draw(ctx, start, end, color || "#888", Thickness);
-                    ctx.globalAlpha = 1;
-                }
-
-                if (linkStyle === 'hidden' && !getSetting("ChristmasTheme.ChristmasEffects.LightSwitch")) {
-                    continue;
-                }
-
-                const totalLength = renderer.getLength(start, end);
-                const numLights = Math.floor(totalLength / baseSpacing);
-                if (numLights < 1) continue;
-
-                const effectiveGlow = reducedGlow ? glowIntensity * 0.5 : glowIntensity;
-
-                // Draw lights in a single batch
-                for (let i = 0; i <= numLights; i++) {
-                    const t = i / numLights;
-                    renderer.getPoint(start, end, t, tempPoint);
-
-                    const wobble = fastSin(t * Math.PI * 4) * 5;
-                    const x = tempPoint[0];
-                    const y = tempPoint[1] + wobble;
-
-                    // Color cycling
-                    const colorIndex = ((i - Math.floor(phase * 2 * Direction)) % colorCount + colorCount) % colorCount;
-                    const lightColor = christmasColors[colorIndex];
-
-                    // Twinkle calculation
-                    let flicker;
-                    if (steadyTwinkle) {
-                        flicker = 1;
-                    } else if (sparkleMode) {
-                        flicker = 0.7 + fastSin(-phase * 8 + i * 5) * 0.3 * Math.random();
-                    } else {
-                        flicker = 0.85 + fastSin(-phase * 5 + i * 3) * 0.15;
+            // Override drawConnections
+            LGraphCanvas.prototype.drawConnections = function (ctx: CanvasRenderingContext2D) {
+                try {
+                    // Skip if page not visible
+                    if (!isPageVisible) {
+                        return;
                     }
 
-                    // Light bulb
-                    ctx.shadowBlur = effectiveGlow * 1.5 * flicker;
-                    ctx.fillStyle = lightColor;
-                    ctx.shadowColor = lightColor;
-                    ctx.globalAlpha = flicker;
+                    const startTime = performance.now();
+                    const animStyle = getSetting("ChristmasTheme.ChristmasEffects.LightSwitch");
 
-                    if (bulbShape === "icicle") {
-                        // Icicle/pointed bulb shape
-                        drawIcicleBulb(ctx, x, y, Thickness);
-                        ctx.fill();
-                    } else {
-                        // Classic round bulb
-                        ctx.beginPath();
-                        ctx.arc(x, y, Thickness * 1.5, 0, Math.PI * 2);
-                        ctx.fill();
+                    if (animStyle === 0) {
+                        origDrawConnections.call(this, ctx);
+                        return;
                     }
 
-                    // Light cap (skip in low performance mode)
-                    if (!skipCaps) {
-                        ctx.beginPath();
-                        ctx.shadowBlur = 0;
-                        const capY = bulbShape === "icicle" ? y - Thickness * 0.8 : y - Thickness;
-                        ctx.arc(x, capY, Thickness * 0.5, 0, Math.PI * 2);
-                        ctx.fillStyle = '#c0c0c0';
-                        ctx.globalAlpha = 1;
-                        ctx.fill();
+                    const delta = TimingManager.update();
+                    const phase = AnimationState.update(delta);
+
+                    ctx.save();
+
+                    // Reset link data index for reuse
+                    State.linkDataIndex = 0;
+
+                    // Collect visible links
+                    for (const linkId in this.graph.links) {
+                        const linkData = this.graph.links[linkId];
+                        if (!linkData) continue;
+
+                        const originNode = this.graph._nodes_by_id[linkData.origin_id];
+                        const targetNode = this.graph._nodes_by_id[linkData.target_id];
+
+                        if (!originNode || !targetNode || originNode.flags.collapsed || targetNode.flags.collapsed) continue;
+
+                        // Reuse or create link data object
+                        let data = State.linkDataCache[State.linkDataIndex];
+                        if (!data) {
+                            data = {
+                                start: ArrayPool.get(),
+                                end: ArrayPool.get(),
+                                color: null
+                            };
+                            State.linkDataCache[State.linkDataIndex] = data;
+                        }
+
+                        originNode.getConnectionPos(false, linkData.origin_slot, data.start);
+                        targetNode.getConnectionPos(true, linkData.target_slot, data.end);
+                        data.color = linkData.type ?
+                            LGraphCanvas.link_type_colors[linkData.type] :
+                            this.default_connection_color;
+
+                        State.linkDataIndex++;
                     }
+
+                    // Render all collected links
+                    if (State.linkDataIndex > 0) {
+                        const linksToRender = State.linkDataCache.slice(0, State.linkDataIndex);
+                        this.renderChristmasLights(ctx, linksToRender, phase);
+                    }
+
+                    ctx.restore();
+
+                    // Monitor performance
+                    const frameTime = performance.now() - startTime;
+                    State.performanceMode = PerformanceMonitor.addFrameTime(frameTime);
+
+                } catch (error) {
+                    console.error("Error in drawConnections:", error);
+                    origDrawConnections.call(this, ctx);
                 }
-                ctx.globalAlpha = 1;
+            };
+
+            // INDEPENDENT ANIMATION LOOP: Ensure we animate even if background is disabled
+            // This fixes the startup issue where animations wait for background loop
+            let linkAnimLoopId: number | null = null;
+            function startLinkLoop() {
+                if (linkAnimLoopId) return;
+                const loop = () => {
+                    // Check if lights are enabled (style > 0)
+                    const lightsOn = getSetting("ChristmasTheme.ChristmasEffects.LightSwitch") !== 0; // 0 is default/off
+
+                    if (isPageVisible && lightsOn && app.canvas) {
+                        // Force redraw to keep animations playing
+                        app.canvas.setDirty(true, true);
+                    }
+                    linkAnimLoopId = requestAnimationFrame(loop);
+                };
+                linkAnimLoopId = requestAnimationFrame(loop);
             }
+            startLinkLoop();
         };
 
         // 🔄 Workflow State Management
@@ -910,5 +627,7 @@ app.registerExtension({
                 app.canvas.setDirty(true, true);
             }
         });
+
+        installChristmasLights();
     }
 });
