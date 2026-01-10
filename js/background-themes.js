@@ -1354,6 +1354,7 @@ let cachedHeight = 0;
 let frameCount = 0;
 let lastFpsCheck = performance.now();
 let currentFps = 60;
+let lowPerfMode = false;
 let lastAnimationTime = 0;
 let animationTime = 0;
 let lastShootingStarTime = 0;
@@ -1377,21 +1378,21 @@ function initStars(width, height) {
       layer = "distant";
       size = 0.3 + Math.random() * 0.5;
       baseOpacity = 0.2 + Math.random() * 0.3;
-      twinkleSpeed = 0.15 + Math.random() * 0.25;
+      twinkleSpeed = 0.08 + Math.random() * 0.15;
       hasGlow = false;
       hasSpikes = false;
     } else if (layerRoll < 0.92) {
       layer = "normal";
       size = 0.5 + Math.random() * 0.8;
       baseOpacity = 0.4 + Math.random() * 0.4;
-      twinkleSpeed = 0.25 + Math.random() * 0.5;
+      twinkleSpeed = 0.15 + Math.random() * 0.3;
       hasGlow = false;
       hasSpikes = false;
     } else {
       layer = "bright";
       size = 0.8 + Math.random() * 0.7;
       baseOpacity = 0.7 + Math.random() * 0.3;
-      twinkleSpeed = 0.4 + Math.random() * 0.7;
+      twinkleSpeed = 0.2 + Math.random() * 0.4;
       hasGlow = true;
       hasSpikes = Math.random() < 0.4;
     }
@@ -1426,7 +1427,7 @@ function initStars(width, height) {
       hue: Math.random() * 60 - 30,
       opacity: 0.015 + Math.random() * 0.015,
       // Much more subtle
-      pulseSpeed: 0.015 + Math.random() * 0.025,
+      pulseSpeed: 5e-3 + Math.random() * 0.01,
       // Very slow
       pulseOffset: Math.random() * Math.PI * 10
       // Large offset to prevent sync
@@ -1526,7 +1527,7 @@ function initBgSnowflakes(width, height) {
       // Pixels per second (slower)
       drift: (Math.random() - 0.5) * 25,
       // Horizontal drift amplitude
-      driftSpeed: 0.2 + Math.random() * 0.3,
+      driftSpeed: 0.1 + Math.random() * 0.15,
       // Drift oscillation speed
       driftOffset: Math.random() * Math.PI * 2,
       // Phase offset
@@ -1828,9 +1829,11 @@ function drawEnhancedBackground(ctx, width, height) {
       currentFps = frameCount;
       frameCount = 0;
       lastFpsCheck = now;
+      if (currentFps < 28) lowPerfMode = true;
+      if (currentFps > 32) lowPerfMode = false;
     }
   }
-  const lowPerfMode = currentFps < 30;
+  ctx.shadowBlur = 0;
   const inCooldown = now - executionEndTime < 500;
   if (!isExecuting && !inCooldown && !starInitialized) {
     cachedHeight = height;
@@ -1856,7 +1859,6 @@ function drawEnhancedBackground(ctx, width, height) {
     ctx.globalAlpha = 0.3;
     ctx.fillRect(0, 0, width, height);
   }
-  ctx.restore();
   const starsEnabled = getSetting("ChristmasTheme.Background.Stars");
   const partyMode = getSetting("ChristmasTheme.Background.PartyMode");
   const colorTheme = getSetting("ChristmasTheme.Background.ColorTheme") || "classic";
@@ -1864,10 +1866,11 @@ function drawEnhancedBackground(ctx, width, height) {
   const time = animationTime;
   const partyColors = ["#ff0080", "#00ff80", "#8000ff", "#ff8000", "#00ffff", "#ff00ff", "#ffff00", "#00ff00"];
   if (starsEnabled) {
-    for (const star of starEntities) {
+    for (let starIdx = 0; starIdx < starEntities.length; starIdx++) {
+      const star = starEntities[starIdx];
       if (lowPerfMode) {
-        if (star.layer === "distant" && Math.random() > 0.3) continue;
-        if (star.layer === "normal" && Math.random() > 0.6) continue;
+        if (star.layer === "distant" && starIdx % 3 !== 0) continue;
+        if (star.layer === "normal" && starIdx % 2 !== 0) continue;
       }
       let starSpeed = star.twinkleSpeed * star.twinkleSpeedMod;
       let opacity, starColor;
@@ -1881,7 +1884,7 @@ function drawEnhancedBackground(ctx, width, height) {
         const twinkle = Math.sin(time * starSpeed + star.twinkleOffset);
         const twinkle2 = Math.sin(time * starSpeed * 0.67 + star.twinkleOffset2);
         const combinedTwinkle = twinkle * 0.6 + twinkle2 * 0.4;
-        opacity = star.baseOpacity * (0.5 + combinedTwinkle * 0.5);
+        opacity = star.baseOpacity * (0.8 + combinedTwinkle * 0.2);
         starColor = star.color;
       }
       ctx.fillStyle = starColor;
@@ -1926,8 +1929,7 @@ function drawEnhancedBackground(ctx, width, height) {
   }
   if (!lowPerfMode && nebulaEntities.length > 0) {
     for (const nebula of nebulaEntities) {
-      const pulse = Math.sin(time * nebula.pulseSpeed + nebula.pulseOffset);
-      const nebulaOpacity = nebula.opacity * (0.9 + pulse * 0.1);
+      const nebulaOpacity = nebula.opacity;
       const nebulaGradient = ctx.createRadialGradient(
         nebula.x,
         nebula.y,

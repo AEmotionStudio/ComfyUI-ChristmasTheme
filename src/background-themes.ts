@@ -1632,6 +1632,7 @@ let cachedHeight = 0;
 let frameCount = 0;
 let lastFpsCheck = performance.now();
 let currentFps = 60;
+let lowPerfMode = false;
 
 // Animation timing
 let lastAnimationTime = 0;
@@ -1669,7 +1670,7 @@ function initStars(width, height) {
             layer = 'distant';
             size = 0.3 + Math.random() * 0.5;
             baseOpacity = 0.2 + Math.random() * 0.3;
-            twinkleSpeed = 0.15 + Math.random() * 0.25;  // Slower for calm feel
+            twinkleSpeed = 0.08 + Math.random() * 0.15;  // Slower for calm feel
             hasGlow = false;
             hasSpikes = false;
         } else if (layerRoll < 0.92) {
@@ -1677,7 +1678,7 @@ function initStars(width, height) {
             layer = 'normal';
             size = 0.5 + Math.random() * 0.8;
             baseOpacity = 0.4 + Math.random() * 0.4;
-            twinkleSpeed = 0.25 + Math.random() * 0.5;  // Slower
+            twinkleSpeed = 0.15 + Math.random() * 0.3;  // Slower
             hasGlow = false;
             hasSpikes = false;
         } else {
@@ -1685,7 +1686,7 @@ function initStars(width, height) {
             layer = 'bright';
             size = 0.8 + Math.random() * 0.7;
             baseOpacity = 0.7 + Math.random() * 0.3;
-            twinkleSpeed = 0.4 + Math.random() * 0.7;  // Slower
+            twinkleSpeed = 0.2 + Math.random() * 0.4;  // Slower
             hasGlow = true;
             hasSpikes = Math.random() < 0.4; // 40% of bright stars get spikes
         }
@@ -1718,7 +1719,7 @@ function initStars(width, height) {
             radius: 100 + Math.random() * 150,  // Larger but more diffuse
             hue: Math.random() * 60 - 30,
             opacity: 0.015 + Math.random() * 0.015,  // Much more subtle
-            pulseSpeed: 0.015 + Math.random() * 0.025,  // Very slow
+            pulseSpeed: 0.005 + Math.random() * 0.01,  // Very slow
             pulseOffset: Math.random() * Math.PI * 10  // Large offset to prevent sync
         });
     }
@@ -1841,7 +1842,7 @@ function initBgSnowflakes(width, height) {
             color: getBgSnowflakeColor(), // Match color scheme
             speed: 8 + Math.random() * 10, // Pixels per second (slower)
             drift: (Math.random() - 0.5) * 25, // Horizontal drift amplitude
-            driftSpeed: 0.2 + Math.random() * 0.3, // Drift oscillation speed
+            driftSpeed: 0.1 + Math.random() * 0.15, // Drift oscillation speed
             driftOffset: Math.random() * Math.PI * 2, // Phase offset
             rotation: Math.random() * Math.PI * 2, // Initial rotation
             rotationSpeed: (Math.random() - 0.5) * 0.3, // Slow rotation
@@ -2289,10 +2290,15 @@ function drawEnhancedBackground(ctx, width, height) {
             currentFps = frameCount;
             frameCount = 0;
             lastFpsCheck = now;
+
+            // Hysteresis for low perf mode to prevent flickering
+            if (currentFps < 28) lowPerfMode = true;
+            if (currentFps > 32) lowPerfMode = false;
         }
     }
 
-    const lowPerfMode = currentFps < 30;
+    // Ensure clean state
+    ctx.shadowBlur = 0;
 
     // 500ms cooldown after execution ends to prevent reinitialization from canvas size changes
     const inCooldown = (now - executionEndTime) < 500;
@@ -2335,7 +2341,6 @@ function drawEnhancedBackground(ctx, width, height) {
         ctx.globalAlpha = 0.3; // Subtle overlay (restored to original value)
         ctx.fillRect(0, 0, width, height);
     }
-    ctx.restore();
 
 
     // Draw stars by layer for proper depth effect (if enabled)
@@ -2349,11 +2354,12 @@ function drawEnhancedBackground(ctx, width, height) {
     const partyColors = ['#ff0080', '#00ff80', '#8000ff', '#ff8000', '#00ffff', '#ff00ff', '#ffff00', '#00ff00'];
 
     if (starsEnabled) {
-        for (const star of starEntities) {
-            // Skip more stars in low perf mode, prioritize visible ones
+        for (let starIdx = 0; starIdx < starEntities.length; starIdx++) {
+            const star = starEntities[starIdx];
+            // Deterministic skip in low perf mode (skip based on index, not random)
             if (lowPerfMode) {
-                if (star.layer === 'distant' && Math.random() > 0.3) continue;
-                if (star.layer === 'normal' && Math.random() > 0.6) continue;
+                if (star.layer === 'distant' && (starIdx % 3 !== 0)) continue;
+                if (star.layer === 'normal' && (starIdx % 2 !== 0)) continue;
             }
 
             // Calculate twinkle with per-star variation to prevent sync
@@ -2372,7 +2378,7 @@ function drawEnhancedBackground(ctx, width, height) {
                 const twinkle = Math.sin(time * starSpeed + star.twinkleOffset);
                 const twinkle2 = Math.sin(time * starSpeed * 0.67 + star.twinkleOffset2);
                 const combinedTwinkle = (twinkle * 0.6 + twinkle2 * 0.4);
-                opacity = star.baseOpacity * (0.5 + combinedTwinkle * 0.5);
+                opacity = star.baseOpacity * (0.8 + combinedTwinkle * 0.2);  // Subtle 20% variation
                 starColor = star.color;
             }
 
@@ -2431,9 +2437,8 @@ function drawEnhancedBackground(ctx, width, height) {
     // Draw nebula clouds (soft glowing areas) - skip in low perf mode
     if (!lowPerfMode && nebulaEntities.length > 0) {
         for (const nebula of nebulaEntities) {
-            // Very subtle, slow pulse - barely noticeable
-            const pulse = Math.sin(time * nebula.pulseSpeed + nebula.pulseOffset);
-            const nebulaOpacity = nebula.opacity * (0.9 + pulse * 0.1);  // Only 10% variation
+            // Static opacity to prevent quantization flicker at low alpha values
+            const nebulaOpacity = nebula.opacity;
 
             // Create radial gradient for soft nebula effect
             const nebulaGradient = ctx.createRadialGradient(
