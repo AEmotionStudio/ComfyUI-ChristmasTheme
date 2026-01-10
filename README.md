@@ -5,7 +5,7 @@
 **Transform your ComfyUI workspace into a winter wonderland**
 
 [![ComfyUI](https://img.shields.io/badge/ComfyUI-Extension-green?style=for-the-badge)](https://github.com/comfyanonymous/ComfyUI)
-[![Version](https://img.shields.io/badge/Version-1.3.0-orange?style=for-the-badge)](https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme/releases)
+[![Version](https://img.shields.io/badge/Version-1.4.0-orange?style=for-the-badge)](https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme/releases)
 [![License](https://img.shields.io/badge/License-GPLv3-red?style=for-the-badge)](LICENSE)
 [![Dependencies](https://img.shields.io/badge/dependencies-none-brightgreen?style=for-the-badge&color=blue)](package.json)
 [![Downloads](https://img.shields.io/badge/dynamic/json?color=blueviolet&label=Downloads&query=downloads.smart_count&url=https://raw.githubusercontent.com/AEmotionStudio/ComfyUI-ChristmasTheme/refs/heads/badges/traffic_stats.json&style=for-the-badge&logo=github)](https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme/releases)
@@ -22,7 +22,7 @@
 
 ---
 
-## What's New in v1.3.0 (January 9, 2026)
+## What's New in v1.4.0 (January 9, 2026)
 
 **TypeScript Migration & Animation Fixes**
 
@@ -30,8 +30,10 @@
 *   **🧪 Robust Testing**: Added comprehensive Unit (Vitest) and End-to-End (Playwright) standard testing suites.
 *   **✨ Smoother Animations**: Fixed issue where background animations would pause when idle; added continuous render loop.
 *   **New Year's Countdown**: A festive countdown to 2026!
-*   **Custom Snowflakes**: Upload your own snowflake images to create unique snowfall effects.
+*   **Custom Snowflakes**: Upload your own snowflake images (logos, emojis, or photos) to create unique snowfall effects.
+*   **Mix Mode**: Blend custom images with standard vector snowflakes for a varied, festive look.
 *   **Performance Mode**: Automatically detects low-fps situations and reduces particle count.
+*   **Modular Design**: Streamlined UI and optimized CSS for a smoother, faster experience.
 
 
 > 📄 **See [CHANGELOG.md](CHANGELOG.md) for the complete version history.**
