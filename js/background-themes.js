@@ -17,6 +17,8 @@ let bgSnowflakeEntities = [];
 let bgSnowflakesInitialized = false;
 let lastBgColorScheme = null;
 let lastBgSnowflakeColorScheme = null;
+let customSnowImage = null;
+let customSnowImageSrc = null;
 let fireworkRockets = [];
 let fireworkParticles = [];
 let fireworkSparks = [];
@@ -1851,7 +1853,7 @@ function drawEnhancedBackground(ctx, width, height) {
   const gradient = getGradient(ctx, height);
   if (gradient) {
     ctx.fillStyle = gradient;
-    ctx.globalAlpha = 0.3;
+    ctx.globalAlpha = 0.8;
     ctx.fillRect(0, 0, width, height);
   }
   const starsEnabled = getSetting("ChristmasTheme.Background.Stars");
@@ -1987,22 +1989,47 @@ function drawEnhancedBackground(ctx, width, height) {
         ctx.fill();
         ctx.fillStyle = flake.color;
       }
-      if (flake.flakeType === "minimal") {
-        drawCrystalSnowflake(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
-      } else if (flake.flakeType === "stellar") {
-        drawStellarSnowflake(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
-      } else if (flake.flakeType === "emoji1") {
-        drawEmoji2744(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
-      } else if (flake.flakeType === "emoji2") {
-        drawEmoji2745(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
-      } else if (flake.flakeType === "emoji3") {
-        drawEmoji2746(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
-      } else if (flake.flakeType === "dendrite") {
-        drawDendriteSnowflake(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
-      } else if (flake.flakeType === "ornate") {
-        drawOrnateSnowflake(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
+      const snowflakeType = getSetting("ChristmasTheme.Snowflake.Type");
+      if (snowflakeType === "custom") {
+        const snowSrc = getSetting("ChristmasTheme.Snowflake.CustomImage");
+        if (snowSrc && snowSrc !== customSnowImageSrc) {
+          customSnowImageSrc = snowSrc;
+          customSnowImage = new Image();
+          customSnowImage.src = snowSrc;
+        }
+        if (customSnowImage && customSnowImage.complete && customSnowImage.naturalWidth > 0) {
+          ctx.save();
+          ctx.translate(flake.x + driftX, flake.y);
+          ctx.rotate(flake.rotation);
+          const size = flake.size * 2;
+          ctx.drawImage(customSnowImage, -size / 2, -size / 2, size, size);
+          ctx.restore();
+        } else {
+          drawCrystalSnowflake(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
+        }
+      } else if (snowflakeType && snowflakeType !== "random") {
+        if (snowflakeType === "classic") drawCrystalSnowflake(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
+        else if (snowflakeType === "simple") drawEmoji2745(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
+        else if (snowflakeType === "bold") drawEmoji2746(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
+        else drawCrystalSnowflake(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
       } else {
-        drawSnowflake(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
+        if (flake.flakeType === "minimal") {
+          drawCrystalSnowflake(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
+        } else if (flake.flakeType === "stellar") {
+          drawStellarSnowflake(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
+        } else if (flake.flakeType === "emoji1") {
+          drawEmoji2744(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
+        } else if (flake.flakeType === "emoji2") {
+          drawEmoji2745(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
+        } else if (flake.flakeType === "emoji3") {
+          drawEmoji2746(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
+        } else if (flake.flakeType === "dendrite") {
+          drawDendriteSnowflake(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
+        } else if (flake.flakeType === "ornate") {
+          drawOrnateSnowflake(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
+        } else {
+          drawSnowflake(ctx, flake.x + driftX, flake.y, flake.size, flake.rotation);
+        }
       }
     }
   }

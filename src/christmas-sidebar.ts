@@ -6,6 +6,9 @@
 // @ts-ignore - ComfyUI external module
 import { app } from "../../../scripts/app.js";
 import { getSetting, updateCache } from "./settings-cache";
+// @ts-ignore
+import SIDEBAR_STYLES from './sidebar.css?inline';
+import { el } from "./utils/dom";
 
 // ============================================================================
 // Type Definitions
@@ -220,8 +223,23 @@ const SETTINGS_CONFIG: SettingsConfigType = {
                     { value: "white", text: "❄️ Classic White" },
                     { value: "blue", text: "💠 Ice Blue" },
                     { value: "rainbow", text: "🌈 Rainbow" },
+                    { value: "white", text: "❄️ Classic White" },
+                    { value: "blue", text: "💠 Ice Blue" },
+                    { value: "rainbow", text: "🌈 Rainbow" },
                     { value: "match", text: "🎨 Match Lights" },
                     { value: "newyear", text: "🎉 New Year's Eve" }
+                ]
+            },
+            {
+                id: "ChristmasTheme.Snowflake.Type",
+                label: "💠 Snowflake Shape",
+                type: "select",
+                options: [
+                    { value: "random", text: "🎲 Random Mix" },
+                    { value: "classic", text: "❄️ Classic" },
+                    { value: "simple", text: "❅ Simple" },
+                    { value: "bold", text: "❆ Bold" },
+                    { value: "custom", text: "📁 Custom Image" }
                 ]
             },
             {
@@ -250,284 +268,133 @@ const SETTINGS_CONFIG: SettingsConfigType = {
 // CSS Styles
 // ============================================================================
 
-const SIDEBAR_STYLES = `
-    .christmas-sidebar {
-        padding: 12px;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        color: #e0e0e0;
-        font-size: 13px;
-        min-width: 200px;
-        background: linear-gradient(180deg, 
-            rgba(30, 60, 40, 0.4) 0%, 
-            rgba(60, 30, 40, 0.3) 50%, 
-            rgba(30, 40, 60, 0.4) 100%);
-        border-radius: 8px;
-    }
-    .christmas-sidebar-header {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 16px;
-        padding-bottom: 12px;
-        border-bottom: 1px solid rgba(255, 100, 100, 0.3);
-    }
-    .christmas-sidebar-header h2 {
-        margin: 0;
-        font-size: 18px;
-        font-weight: 600;
-        background: linear-gradient(135deg, #ff4444, #ff6b6b, #44ff44, #66ff66);
-        background-size: 200% 200%;
-        animation: christmas-shimmer 3s ease infinite;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-    @keyframes christmas-shimmer {
-        0%, 100% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-    }
-    .christmas-sidebar-section {
-        margin-bottom: 16px;
-        background: linear-gradient(135deg, 
-            rgba(139, 69, 69, 0.15) 0%, 
-            rgba(34, 139, 34, 0.1) 100%);
-        border-radius: 8px;
-        padding: 12px;
-        border: 1px solid rgba(255, 100, 100, 0.15);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-        overflow: hidden;
-    }
-    .christmas-sidebar-section-title {
-        font-size: 14px;
-        font-weight: 600;
-        margin-bottom: 12px;
-        color: #fff;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-    }
-    .christmas-setting-row {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: space-between;
-        align-items: center;
-        padding: 8px 0;
-        gap: 8px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    }
-    .christmas-setting-row:last-child {
-        border-bottom: none;
-    }
-    .christmas-setting-label {
-        font-size: 12px;
-        color: #ccc;
-        flex: 1 1 auto;
-        min-width: 80px;
-    }
-    .christmas-toggle {
-        position: relative;
-        width: 40px;
-        height: 22px;
-        min-width: 40px;
-        background: #333;
-        border-radius: 11px;
-        cursor: pointer;
-        transition: background 0.2s;
-        border: 1px solid #555;
-        flex-shrink: 0;
-    }
-    .christmas-toggle.active {
-        background: linear-gradient(135deg, #228B22, #32CD32);
-        border-color: #32CD32;
-        box-shadow: 0 0 8px rgba(50, 205, 50, 0.5);
-    }
-    .christmas-toggle::after {
-        content: '';
-        position: absolute;
-        width: 18px;
-        height: 18px;
-        background: #fff;
-        border-radius: 50%;
-        top: 1px;
-        left: 1px;
-        transition: transform 0.2s;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-    }
-    .christmas-toggle.active::after {
-        transform: translateX(18px);
-    }
-    .christmas-select {
-        background: rgba(42, 42, 42, 0.9);
-        color: #e0e0e0;
-        border: 1px solid rgba(139, 69, 69, 0.4);
-        border-radius: 6px;
-        padding: 6px 8px;
-        font-size: 11px;
-        cursor: pointer;
-        min-width: 100px;
-        max-width: 100%;
-        flex: 1 1 100px;
-    }
-    .christmas-select:hover {
-        border-color: rgba(50, 205, 50, 0.5);
-    }
-    .christmas-select:focus {
-        outline: none;
-        border-color: #32CD32;
-        box-shadow: 0 0 4px rgba(50, 205, 50, 0.3);
-    }
-    .christmas-slider-row {
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-        gap: 4px;
-    }
-    .christmas-slider-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        width: 100%;
-    }
-    .christmas-slider-container {
-        display: flex;
-        align-items: center;
-        width: 100%;
-    }
-    .christmas-slider {
-        flex: 1;
-        height: 4px;
-        background: linear-gradient(90deg, #8B4545, #228B22);
-        border-radius: 2px;
-        -webkit-appearance: none;
-        appearance: none;
-        cursor: pointer;
-    }
-    .christmas-slider::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        width: 14px;
-        height: 14px;
-        background: linear-gradient(135deg, #ff4444, #cc0000);
-        border-radius: 50%;
-        cursor: pointer;
-        box-shadow: 0 0 6px rgba(255, 68, 68, 0.5);
-    }
-    .christmas-slider::-moz-range-thumb {
-        width: 14px;
-        height: 14px;
-        background: linear-gradient(135deg, #ff4444, #cc0000);
-        border-radius: 50%;
-        cursor: pointer;
-        border: none;
-        box-shadow: 0 0 6px rgba(255, 68, 68, 0.5);
-    }
-    .christmas-slider-value {
-        font-size: 11px;
-        color: #66ff66;
-        font-weight: 500;
-    }
-    .christmas-footer {
-        margin-top: 16px;
-        padding-top: 12px;
-        border-top: 1px solid rgba(255, 100, 100, 0.2);
-        text-align: center;
-    }
-    .christmas-footer a {
-        color: #ff6b6b;
-        text-decoration: none;
-        font-size: 11px;
-        transition: color 0.2s;
-    }
-    .christmas-footer a:hover {
-        color: #66ff66;
-        text-decoration: underline;
-    }
-`;
+
 
 // ============================================================================
 // UI Element Creators
 // ============================================================================
 
 /**
+ * Handle file upload for custom assets
+ */
+function handleFileUpload(callback: (base64: string) => void) {
+    const input = el('input', { type: 'file', accept: 'image/*' });
+    input.onchange = (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (!file) return;
+
+        // Size check (max 2MB to be safe with localStorage quotas)
+        if (file.size > 2 * 1024 * 1024) {
+            alert("Image too large! Please select an image under 2MB.");
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            const res = evt.target?.result as string;
+            if (res) callback(res);
+        };
+        reader.readAsDataURL(file);
+    };
+    input.click();
+}
+
+/**
  * Create a toggle switch element
  */
 function createToggle(settingConfig: SettingConfig): HTMLDivElement {
-    const toggle = document.createElement('div');
-    toggle.className = 'christmas-toggle';
-
-    const trueValue = settingConfig.trueValue !== undefined ? settingConfig.trueValue : true;
-    const falseValue = settingConfig.falseValue !== undefined ? settingConfig.falseValue : false;
-
-    // Get current value
+    const trueValue = settingConfig.trueValue ?? true;
+    const falseValue = settingConfig.falseValue ?? false;
     const currentValue = getSetting(settingConfig.id);
-    if (currentValue === trueValue || currentValue === true || currentValue === 1) {
-        toggle.classList.add('active');
-    }
+    const isActive = currentValue === trueValue || currentValue === true || currentValue === 1;
 
-    toggle.addEventListener('click', () => {
-        const isActive = toggle.classList.contains('active');
-        const newValue = isActive ? falseValue : trueValue;
+    return el('div', {
+        className: `christmas-toggle ${isActive ? 'active' : ''}`,
+        onClick: (e: MouseEvent) => {
+            const t = e.currentTarget as HTMLElement;
+            const wasActive = t.classList.contains('active');
+            const newValue = wasActive ? falseValue : trueValue;
 
-        toggle.classList.toggle('active');
-        updateCache(settingConfig.id, newValue);
+            t.classList.toggle('active');
+            updateCache(settingConfig.id, newValue);
 
-        // Also update the native ComfyUI setting
-        if (app.ui && app.ui.settings) {
-            app.ui.settings.setSettingValue(settingConfig.id, newValue);
-        }
+            // Also update the native ComfyUI setting
+            app.ui?.settings?.setSettingValue(settingConfig.id, newValue);
 
-        // Force canvas redraw
-        if (app.canvas) {
-            app.canvas.setDirty(true, true);
+            // Force canvas redraw
+            app.canvas?.setDirty(true, true);
         }
     });
-
-    return toggle;
 }
 
 /**
  * Create a select dropdown element
  */
-function createSelect(settingConfig: SettingConfig): HTMLSelectElement {
-    const select = document.createElement('select');
-    select.className = 'christmas-select';
-
-    // Add tooltip if defined
-    if (settingConfig.tooltip) {
-        select.title = settingConfig.tooltip;
-    }
-
+function createSelect(settingConfig: SettingConfig): HTMLElement {
     const currentValue = getSetting(settingConfig.id);
 
-    (settingConfig.options || []).forEach(opt => {
-        const option = document.createElement('option');
-        option.value = String(opt.value);
-        option.textContent = opt.text;
-        if (String(opt.value) === String(currentValue)) {
-            option.selected = true;
-        }
-        select.appendChild(option);
-    });
+    const options = (settingConfig.options || []).map(opt =>
+        el('option', {
+            value: String(opt.value),
+            selected: String(opt.value) === String(currentValue)
+        }, [opt.text])
+    );
 
-    select.addEventListener('change', () => {
-        let value: string | number = select.value;
-        // Convert to number if it looks like a number
-        if (!isNaN(Number(value)) && value !== '') {
-            value = Number(value);
-        }
+    const select = el('select', {
+        className: 'christmas-select',
+        title: settingConfig.tooltip || '',
+        onChange: (e: Event) => {
+            const sel = e.target as HTMLSelectElement;
+            let value: string | number = sel.value;
+            if (!isNaN(Number(value)) && value !== '') {
+                value = Number(value);
+            }
 
-        updateCache(settingConfig.id, value);
+            updateCache(settingConfig.id, value);
+            app.ui?.settings?.setSettingValue(settingConfig.id, value);
+            app.canvas?.setDirty(true, true);
 
-        // Also update the native ComfyUI setting
-        if (app.ui && app.ui.settings) {
-            app.ui.settings.setSettingValue(settingConfig.id, value);
+            // Trigger upload if switching to custom
+            if (value === 'custom') {
+                // Discard 'Select' change event to wait for upload? 
+                // No, we set it to 'custom', then if they haven't uploaded yet or want to change, they click button.
+                // We can auto-click button if it's the first time
+                const uploadBtn = sel.nextElementSibling as HTMLElement;
+                if (uploadBtn) {
+                    uploadBtn.style.display = 'block';
+                    const imageKey = settingConfig.id.replace('ColorTheme', 'CustomImage');
+                    if (!getSetting(imageKey)) {
+                        uploadBtn.click();
+                    }
+                }
+            } else {
+                const uploadBtn = sel.nextElementSibling as HTMLElement;
+                if (uploadBtn) uploadBtn.style.display = 'none';
+            }
         }
+    }, options) as HTMLSelectElement;
 
-        // Force canvas redraw
-        if (app.canvas) {
-            app.canvas.setDirty(true, true);
-        }
-    });
+    // Special handling for Custom Image capable fields
+    // Changed from Background.ColorTheme to Snowflake.Type
+    if (settingConfig.id === 'ChristmasTheme.Snowflake.Type') {
+        const uploadBtn = el('button', {
+            textContent: '📁',
+            className: 'christmas-upload-btn',
+            title: 'Upload Custom Snowflake',
+            style: { display: currentValue === 'custom' ? 'block' : 'none' },
+            onClick: () => handleFileUpload((b64) => {
+                const imageKey = settingConfig.id.replace('Type', 'CustomImage');
+                updateCache(imageKey, b64);
+                app.ui?.settings?.setSettingValue(imageKey, b64);
+                app.canvas?.setDirty(true, true);
+            })
+        });
+
+        return el('div', { style: { display: 'flex', gap: '4px', alignItems: 'center', width: '100%' } }, [
+            select,
+            uploadBtn
+        ]);
+    }
 
     return select;
 }
@@ -536,112 +403,73 @@ function createSelect(settingConfig: SettingConfig): HTMLSelectElement {
  * Create a slider element
  */
 function createSlider(settingConfig: SettingConfig): HTMLDivElement {
-    const container = document.createElement('div');
-    container.className = 'christmas-slider-container';
+    const currentVal = getSetting(settingConfig.id) || settingConfig.min || 0;
 
-    const slider = document.createElement('input');
-    slider.type = 'range';
-    slider.className = 'christmas-slider';
-    slider.min = String(settingConfig.min || 0);
-    slider.max = String(settingConfig.max || 100);
-    slider.step = String(settingConfig.step || 1);
-    slider.value = String(getSetting(settingConfig.id) || settingConfig.min || 0);
+    const valueLabel = el('span', {
+        className: 'christmas-slider-value'
+    }, [String(currentVal)]);
 
-    const valueLabel = document.createElement('span');
-    valueLabel.className = 'christmas-slider-value';
-    valueLabel.textContent = slider.value;
+    const slider = el('input', {
+        type: 'range',
+        className: 'christmas-slider',
+        min: String(settingConfig.min || 0),
+        max: String(settingConfig.max || 100),
+        step: String(settingConfig.step || 1),
+        value: String(currentVal)
+    });
 
     slider.addEventListener('input', () => {
         const value = parseFloat(slider.value);
         valueLabel.textContent = String(value);
 
         updateCache(settingConfig.id, value);
-
-        // Also update the native ComfyUI setting
-        if (app.ui && app.ui.settings) {
-            app.ui.settings.setSettingValue(settingConfig.id, value);
-        }
-
-        // Force canvas redraw
-        if (app.canvas) {
-            app.canvas.setDirty(true, true);
-        }
+        app.ui?.settings?.setSettingValue(settingConfig.id, value);
+        app.canvas?.setDirty(true, true);
     });
 
-    container.appendChild(slider);
-    container.appendChild(valueLabel);
-
-    return container;
+    return el('div', { className: 'christmas-slider-container' }, [
+        slider,
+        valueLabel
+    ]);
 }
 
 /**
  * Create a setting row
  */
 function createSettingRow(settingConfig: SettingConfig): HTMLDivElement {
-    const row = document.createElement('div');
-    row.className = 'christmas-setting-row';
-
     // Sliders get special stacked layout
     if (settingConfig.type === 'slider') {
-        const sliderRow = document.createElement('div');
-        sliderRow.className = 'christmas-slider-row';
-
-        // Header with label and value
-        const header = document.createElement('div');
-        header.className = 'christmas-slider-header';
-
-        const label = document.createElement('span');
-        label.className = 'christmas-setting-label';
-        label.textContent = settingConfig.label;
-
-        const valueLabel = document.createElement('span');
-        valueLabel.className = 'christmas-slider-value';
         const currentVal = getSetting(settingConfig.id) || settingConfig.min || 0;
-        valueLabel.textContent = String(currentVal);
+        const valueLabel = el('span', { className: 'christmas-slider-value' }, [String(currentVal)]);
 
-        header.appendChild(label);
-        header.appendChild(valueLabel);
-
-        // Slider container
-        const sliderContainer = document.createElement('div');
-        sliderContainer.className = 'christmas-slider-container';
-
-        const slider = document.createElement('input');
-        slider.type = 'range';
-        slider.className = 'christmas-slider';
-        slider.min = String(settingConfig.min || 0);
-        slider.max = String(settingConfig.max || 100);
-        slider.step = String(settingConfig.step || 1);
-        slider.value = String(currentVal);
-
-        slider.addEventListener('input', () => {
-            const value = parseFloat(slider.value);
-            valueLabel.textContent = String(value);
-
-            updateCache(settingConfig.id, value);
-
-            if (app.ui && app.ui.settings) {
-                app.ui.settings.setSettingValue(settingConfig.id, value);
-            }
-
-            if (app.canvas) {
-                app.canvas.setDirty(true, true);
+        const slider = el('input', {
+            type: 'range',
+            className: 'christmas-slider',
+            min: String(settingConfig.min || 0),
+            max: String(settingConfig.max || 100),
+            step: String(settingConfig.step || 1),
+            value: String(currentVal),
+            onInput: (e: Event) => {
+                const val = parseFloat((e.target as HTMLInputElement).value);
+                valueLabel.textContent = String(val);
+                updateCache(settingConfig.id, val);
+                app.ui?.settings?.setSettingValue(settingConfig.id, val);
+                app.canvas?.setDirty(true, true);
             }
         });
 
-        sliderContainer.appendChild(slider);
-        sliderRow.appendChild(header);
-        sliderRow.appendChild(sliderContainer);
-        row.appendChild(sliderRow);
-
-        return row;
+        return el('div', { className: 'christmas-setting-row' }, [
+            el('div', { className: 'christmas-slider-row' }, [
+                el('div', { className: 'christmas-slider-header' }, [
+                    el('span', { className: 'christmas-setting-label' }, [settingConfig.label]),
+                    valueLabel
+                ]),
+                el('div', { className: 'christmas-slider-container' }, [slider])
+            ])
+        ]);
     }
 
     // Standard layout for toggles and selects
-    const label = document.createElement('span');
-    label.className = 'christmas-setting-label';
-    label.textContent = settingConfig.label;
-
     let control: HTMLElement;
     switch (settingConfig.type) {
         case 'toggle':
@@ -651,66 +479,57 @@ function createSettingRow(settingConfig: SettingConfig): HTMLDivElement {
             control = createSelect(settingConfig);
             break;
         default:
-            control = document.createElement('span');
-            control.textContent = 'Unknown type';
+            control = el('span', {}, ['Unknown type']);
     }
 
-    row.appendChild(label);
-    row.appendChild(control);
-
-    return row;
+    return el('div', { className: 'christmas-setting-row' }, [
+        el('span', { className: 'christmas-setting-label' }, [settingConfig.label]),
+        control
+    ]);
 }
 
 /**
  * Create a section with its settings
  */
 function createSection(sectionKey: string, sectionConfig: SectionConfig): HTMLDivElement {
-    const section = document.createElement('div');
-    section.className = 'christmas-sidebar-section';
+    const title = el('div', { className: 'christmas-sidebar-section-title' }, [sectionConfig.title]);
+    const settings = sectionConfig.settings.map(s => createSettingRow(s));
 
-    const title = document.createElement('div');
-    title.className = 'christmas-sidebar-section-title';
-    title.textContent = sectionConfig.title;
-    section.appendChild(title);
-
-    sectionConfig.settings.forEach(settingConfig => {
-        section.appendChild(createSettingRow(settingConfig));
-    });
-
-    return section;
+    return el('div', { className: 'christmas-sidebar-section' }, [
+        title,
+        ...settings
+    ]);
 }
 
 /**
  * Render the sidebar content
  */
-function renderSidebar(el: HTMLElement): void {
+function renderSidebar(elRoot: HTMLElement): void {
     // Add styles
     const styleEl = document.createElement('style');
     styleEl.textContent = SIDEBAR_STYLES;
-    el.appendChild(styleEl);
+    elRoot.appendChild(styleEl);
 
-    // Create main container
-    const container = document.createElement('div');
-    container.className = 'christmas-sidebar';
+    const sections = Object.entries(SETTINGS_CONFIG).map(([key, config]) =>
+        createSection(key, config)
+    );
 
-    // Header
-    const header = document.createElement('div');
-    header.className = 'christmas-sidebar-header';
-    header.innerHTML = '<h2>🎄 Christmas Theme</h2>';
-    container.appendChild(header);
+    const footer = el('div', { className: 'christmas-footer' }, [
+        el('a', {
+            href: "https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme",
+            target: "_blank"
+        }, ["🎁 GitHub"])
+    ]);
 
-    // Sections
-    for (const [key, config] of Object.entries(SETTINGS_CONFIG)) {
-        container.appendChild(createSection(key, config));
-    }
+    const container = el('div', { className: 'christmas-sidebar' }, [
+        el('div', { className: 'christmas-sidebar-header' }, [
+            el('h2', {}, ["🎄 Christmas Theme"])
+        ]),
+        ...sections,
+        footer
+    ]);
 
-    // Footer
-    const footer = document.createElement('div');
-    footer.className = 'christmas-footer';
-    footer.innerHTML = '<a href="https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme" target="_blank">🎁 GitHub</a>';
-    container.appendChild(footer);
-
-    el.appendChild(container);
+    elRoot.appendChild(container);
 }
 
 // ============================================================================
