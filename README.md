@@ -49,6 +49,10 @@
 
 ---
 
+[<img src="https://img.youtube.com/vi/pI6Kc-xebAQ/maxresdefault.jpg" width="100%">](https://www.youtube.com/watch?v=pI6Kc-xebAQ)
+
+<p align="center"><i>NotebookLM Overview: Exploring the features and updates of the Christmas Theme extension.</i></p>
+
 ## ✨ Features
 
 <table>
