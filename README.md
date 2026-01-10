@@ -5,7 +5,7 @@
 **Transform your ComfyUI workspace into a winter wonderland**
 
 [![ComfyUI](https://img.shields.io/badge/ComfyUI-Extension-green?style=for-the-badge)](https://github.com/comfyanonymous/ComfyUI)
-[![Version](https://img.shields.io/badge/Version-1.4.0-orange?style=for-the-badge)](https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme/releases)
+[![Version](https://img.shields.io/badge/Version-1.4.1-orange?style=for-the-badge)](https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme/releases)
 [![License](https://img.shields.io/badge/License-GPLv3-red?style=for-the-badge)](LICENSE)
 [![Dependencies](https://img.shields.io/badge/dependencies-none-brightgreen?style=for-the-badge&color=blue)](package.json)
 [![Downloads](https://img.shields.io/badge/dynamic/json?color=blueviolet&label=Downloads&query=downloads.smart_count&url=https://raw.githubusercontent.com/AEmotionStudio/ComfyUI-ChristmasTheme/refs/heads/badges/traffic_stats.json&style=for-the-badge&logo=github)](https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme/releases)
@@ -22,7 +22,7 @@
 
 ---
 
-## What's New in v1.4.0 (January 9, 2026)
+## What's New in v1.4.1 (January 10, 2026)
 
 **TypeScript Migration & Animation Fixes**
 
