@@ -54,6 +54,7 @@ interface LinkData {
 interface LinkRenderer {
     getLength(start: Float32Array, end: Float32Array): number;
     getPoint(start: Float32Array, end: Float32Array, t: number, out: Float32Array): void;
+    tracePath(ctx: CanvasRenderingContext2D, start: Float32Array, end: Float32Array): void;
     draw(ctx: CanvasRenderingContext2D, start: Float32Array, end: Float32Array, color: string, thickness: number): void;
 }
 
@@ -160,87 +161,77 @@ app.registerExtension({
         };
 
         // Optimized Link Renderers with reduced function calls
+        // Optimized Link Renderers with reduced function calls
         const LinkRenderers: Record<string, LinkRenderer> = {
             spline: {
                 getLength(start, end) {
                     const dx = end[0] - start[0];
                     const dy = end[1] - start[1];
                     const dist = Math.sqrt(dx * dx + dy * dy);
-                    // Approximate spline length (slightly longer than straight)
                     return dist * 1.15;
                 },
-
                 getPoint(start, end, t, out) {
                     const dx = end[0] - start[0];
                     const dy = end[1] - start[1];
                     const dist = Math.sqrt(dx * dx + dy * dy);
                     const bendDistance = Math.min(dist * 0.5, 100);
-
                     const p0x = start[0], p0y = start[1];
                     const p1x = start[0] + bendDistance, p1y = start[1];
                     const p2x = end[0] - bendDistance, p2y = end[1];
                     const p3x = end[0], p3y = end[1];
-
-                    const t2 = t * t;
-                    const t3 = t2 * t;
                     const mt = 1 - t;
                     const mt2 = mt * mt;
                     const mt3 = mt2 * mt;
-
+                    const t2 = t * t;
+                    const t3 = t2 * t;
                     out[0] = mt3 * p0x + 3 * mt2 * t * p1x + 3 * mt * t2 * p2x + t3 * p3x;
                     out[1] = mt3 * p0y + 3 * mt2 * t * p1y + 3 * mt * t2 * p2y + t3 * p3y;
                 },
-
-                draw(ctx, start, end, color, thickness) {
+                tracePath(ctx, start, end) {
                     const dx = end[0] - start[0];
                     const dy = end[1] - start[1];
                     const dist = Math.sqrt(dx * dx + dy * dy);
                     const bendDistance = Math.min(dist * 0.5, 100);
-
-                    ctx.beginPath();
                     ctx.moveTo(start[0], start[1]);
-                    ctx.bezierCurveTo(
-                        start[0] + bendDistance, start[1],
-                        end[0] - bendDistance, end[1],
-                        end[0], end[1]
-                    );
+                    ctx.bezierCurveTo(start[0] + bendDistance, start[1], end[0] - bendDistance, end[1], end[0], end[1]);
+                },
+                draw(ctx, start, end, color, thickness) {
+                    ctx.beginPath();
+                    this.tracePath(ctx, start, end);
                     ctx.strokeStyle = color;
                     ctx.lineWidth = thickness * 0.8;
                     ctx.stroke();
                 }
             },
-
             straight: {
                 getLength(start, end) {
                     const dx = end[0] - start[0];
                     const dy = end[1] - start[1];
                     return Math.sqrt(dx * dx + dy * dy);
                 },
-
                 getPoint(start, end, t, out) {
                     out[0] = start[0] + (end[0] - start[0]) * t;
                     out[1] = start[1] + (end[1] - start[1]) * t;
                 },
-
-                draw(ctx, start, end, color, thickness) {
-                    ctx.beginPath();
+                tracePath(ctx, start, end) {
                     ctx.moveTo(start[0], start[1]);
                     ctx.lineTo(end[0], end[1]);
+                },
+                draw(ctx, start, end, color, thickness) {
+                    ctx.beginPath();
+                    this.tracePath(ctx, start, end);
                     ctx.strokeStyle = color;
                     ctx.lineWidth = thickness * 0.8;
                     ctx.stroke();
                 }
             },
-
             linear: {
                 getLength(start, end) {
                     const midX = (start[0] + end[0]) / 2;
                     return Math.abs(midX - start[0]) + Math.abs(end[1] - start[1]) + Math.abs(end[0] - midX);
                 },
-
                 getPoint(start, end, t, out) {
                     const midX = (start[0] + end[0]) / 2;
-
                     if (t <= 0.33) {
                         const segmentT = t / 0.33;
                         out[0] = start[0] + (midX - start[0]) * segmentT;
@@ -255,20 +246,21 @@ app.registerExtension({
                         out[1] = end[1];
                     }
                 },
-
-                draw(ctx, start, end, color, thickness) {
+                tracePath(ctx, start, end) {
                     const midX = (start[0] + end[0]) / 2;
-                    ctx.beginPath();
                     ctx.moveTo(start[0], start[1]);
                     ctx.lineTo(midX, start[1]);
                     ctx.lineTo(midX, end[1]);
                     ctx.lineTo(end[0], end[1]);
+                },
+                draw(ctx, start, end, color, thickness) {
+                    ctx.beginPath();
+                    this.tracePath(ctx, start, end);
                     ctx.strokeStyle = color;
                     ctx.lineWidth = thickness * 0.8;
                     ctx.stroke();
                 }
             },
-
             hidden: {
                 getLength(start, end) {
                     const dx = end[0] - start[0];
@@ -278,6 +270,10 @@ app.registerExtension({
                 getPoint(start, end, t, out) {
                     out[0] = start[0] + (end[0] - start[0]) * t;
                     out[1] = start[1] + (end[1] - start[1]) * t;
+                },
+                tracePath(ctx, start, end) {
+                    ctx.moveTo(start[0], start[1]);
+                    ctx.lineTo(end[0], end[1]);
                 },
                 draw() { }
             }
@@ -385,27 +381,32 @@ app.registerExtension({
                         const totalLength = renderer.getLength(start, end);
 
                         if (candyCaneMode) {
-                            // 🍬 Candy Cane: Animated diagonal stripes with particles
+                            // 🍬 Candy Cane: Animated diagonal stripes using dashed lines for smoothness
                             const stripeWidth = 15;
-                            const numSegments = Math.floor(totalLength / 3);
+                            const speed = 45; // Tuned speed
 
-                            for (let i = 0; i <= numSegments; i++) {
-                                const t = i / numSegments;
-                                renderer.getPoint(start, end, t, tempPoint);
+                            // 1. Draw solid white base
+                            ctx.beginPath();
+                            renderer.tracePath(ctx, start, end);
+                            ctx.strokeStyle = '#ffffff';
+                            ctx.lineWidth = Thickness * 2;
+                            ctx.lineCap = 'round';
+                            ctx.stroke();
 
-                                // Flowing stripe pattern - ensure positive modulo
-                                const stripePhase = ((t * totalLength / stripeWidth - phase * 3) % 1 + 1) % 1;
-                                const isRed = stripePhase < 0.5;
+                            // 2. Draw moving red stripes
+                            ctx.beginPath();
+                            renderer.tracePath(ctx, start, end);
+                            ctx.strokeStyle = '#ff0000';
+                            ctx.lineWidth = Thickness * 2;
+                            ctx.lineCap = 'round';
+                            ctx.setLineDash([stripeWidth, stripeWidth]);
+                            ctx.lineDashOffset = -phase * speed; // Flow Output -> Input
+                            ctx.globalAlpha = 0.9;
+                            ctx.stroke();
 
-                                ctx.fillStyle = isRed ? '#ff0000' : '#ffffff';
-                                ctx.shadowBlur = isRed ? 8 : 4;
-                                ctx.shadowColor = isRed ? '#ff0000' : '#ffffff';
-                                ctx.globalAlpha = 0.9;
-
-                                ctx.beginPath();
-                                ctx.arc(tempPoint[0], tempPoint[1], Thickness * 1.2, 0, Math.PI * 2);
-                                ctx.fill();
-                            }
+                            // Cleanup
+                            ctx.setLineDash([]);
+                            ctx.globalAlpha = 1;
                         } else if (frostMode) {
                             // ❄️ Frost Trail: Icy crystals with spreading glow
                             const numCrystals = Math.floor(totalLength / baseSpacing);

@@ -82,29 +82,25 @@ app.registerExtension({
           const p1x = start[0] + bendDistance, p1y = start[1];
           const p2x = end[0] - bendDistance, p2y = end[1];
           const p3x = end[0], p3y = end[1];
-          const t2 = t * t;
-          const t3 = t2 * t;
           const mt = 1 - t;
           const mt2 = mt * mt;
           const mt3 = mt2 * mt;
+          const t2 = t * t;
+          const t3 = t2 * t;
           out[0] = mt3 * p0x + 3 * mt2 * t * p1x + 3 * mt * t2 * p2x + t3 * p3x;
           out[1] = mt3 * p0y + 3 * mt2 * t * p1y + 3 * mt * t2 * p2y + t3 * p3y;
         },
-        draw(ctx, start, end, color, thickness) {
+        tracePath(ctx, start, end) {
           const dx = end[0] - start[0];
           const dy = end[1] - start[1];
           const dist = Math.sqrt(dx * dx + dy * dy);
           const bendDistance = Math.min(dist * 0.5, 100);
-          ctx.beginPath();
           ctx.moveTo(start[0], start[1]);
-          ctx.bezierCurveTo(
-            start[0] + bendDistance,
-            start[1],
-            end[0] - bendDistance,
-            end[1],
-            end[0],
-            end[1]
-          );
+          ctx.bezierCurveTo(start[0] + bendDistance, start[1], end[0] - bendDistance, end[1], end[0], end[1]);
+        },
+        draw(ctx, start, end, color, thickness) {
+          ctx.beginPath();
+          this.tracePath(ctx, start, end);
           ctx.strokeStyle = color;
           ctx.lineWidth = thickness * 0.8;
           ctx.stroke();
@@ -120,10 +116,13 @@ app.registerExtension({
           out[0] = start[0] + (end[0] - start[0]) * t;
           out[1] = start[1] + (end[1] - start[1]) * t;
         },
-        draw(ctx, start, end, color, thickness) {
-          ctx.beginPath();
+        tracePath(ctx, start, end) {
           ctx.moveTo(start[0], start[1]);
           ctx.lineTo(end[0], end[1]);
+        },
+        draw(ctx, start, end, color, thickness) {
+          ctx.beginPath();
+          this.tracePath(ctx, start, end);
           ctx.strokeStyle = color;
           ctx.lineWidth = thickness * 0.8;
           ctx.stroke();
@@ -150,13 +149,16 @@ app.registerExtension({
             out[1] = end[1];
           }
         },
-        draw(ctx, start, end, color, thickness) {
+        tracePath(ctx, start, end) {
           const midX = (start[0] + end[0]) / 2;
-          ctx.beginPath();
           ctx.moveTo(start[0], start[1]);
           ctx.lineTo(midX, start[1]);
           ctx.lineTo(midX, end[1]);
           ctx.lineTo(end[0], end[1]);
+        },
+        draw(ctx, start, end, color, thickness) {
+          ctx.beginPath();
+          this.tracePath(ctx, start, end);
           ctx.strokeStyle = color;
           ctx.lineWidth = thickness * 0.8;
           ctx.stroke();
@@ -171,6 +173,10 @@ app.registerExtension({
         getPoint(start, end, t, out) {
           out[0] = start[0] + (end[0] - start[0]) * t;
           out[1] = start[1] + (end[1] - start[1]) * t;
+        },
+        tracePath(ctx, start, end) {
+          ctx.moveTo(start[0], start[1]);
+          ctx.lineTo(end[0], end[1]);
         },
         draw() {
         }
@@ -241,20 +247,24 @@ app.registerExtension({
             const totalLength = renderer.getLength(start, end);
             if (candyCaneMode) {
               const stripeWidth = 15;
-              const numSegments = Math.floor(totalLength / 3);
-              for (let i = 0; i <= numSegments; i++) {
-                const t = i / numSegments;
-                renderer.getPoint(start, end, t, tempPoint);
-                const stripePhase = ((t * totalLength / stripeWidth - phase * 3) % 1 + 1) % 1;
-                const isRed = stripePhase < 0.5;
-                ctx.fillStyle = isRed ? "#ff0000" : "#ffffff";
-                ctx.shadowBlur = isRed ? 8 : 4;
-                ctx.shadowColor = isRed ? "#ff0000" : "#ffffff";
-                ctx.globalAlpha = 0.9;
-                ctx.beginPath();
-                ctx.arc(tempPoint[0], tempPoint[1], Thickness * 1.2, 0, Math.PI * 2);
-                ctx.fill();
-              }
+              const speed = 45;
+              ctx.beginPath();
+              renderer.tracePath(ctx, start, end);
+              ctx.strokeStyle = "#ffffff";
+              ctx.lineWidth = Thickness * 2;
+              ctx.lineCap = "round";
+              ctx.stroke();
+              ctx.beginPath();
+              renderer.tracePath(ctx, start, end);
+              ctx.strokeStyle = "#ff0000";
+              ctx.lineWidth = Thickness * 2;
+              ctx.lineCap = "round";
+              ctx.setLineDash([stripeWidth, stripeWidth]);
+              ctx.lineDashOffset = -phase * speed;
+              ctx.globalAlpha = 0.9;
+              ctx.stroke();
+              ctx.setLineDash([]);
+              ctx.globalAlpha = 1;
             } else if (frostMode) {
               const numCrystals = Math.floor(totalLength / baseSpacing);
               const frostColors = ["#e0ffff", "#b0e0e6", "#87ceeb", "#add8e6", "#ffffff"];
