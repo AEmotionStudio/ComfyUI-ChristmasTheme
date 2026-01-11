@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.4.2] - 2026-01-10
+## [1.4.3] - 2026-01-11
 
 ### Added
 - **Custom Snowflakes**: Full support for custom image uploads.
