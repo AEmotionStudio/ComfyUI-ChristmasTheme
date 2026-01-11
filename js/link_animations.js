@@ -261,7 +261,7 @@ app.registerExtension({
               for (let i = 0; i <= numCrystals; i++) {
                 const t = i / numCrystals;
                 renderer.getPoint(start, end, t, tempPoint);
-                const shimmer = 0.6 + fastSin(phase * 4 + i * 2) * 0.4;
+                const shimmer = 0.6 + fastSin(-phase * 4 + i * 2) * 0.4;
                 const crystalColor = frostColors[i % frostColors.length];
                 ctx.shadowBlur = 15 * shimmer;
                 ctx.shadowColor = "#87ceeb";
@@ -290,13 +290,13 @@ app.registerExtension({
               for (let i = 0; i <= numPoints; i++) {
                 const t = i / numPoints;
                 renderer.getPoint(start, end, t, tempPoint);
-                const waveOffset = fastSin(t * Math.PI * 3 + phase * 2) * 8;
+                const waveOffset = fastSin(t * Math.PI * 3 - phase * 6) * 8;
                 const x = tempPoint[0];
                 const y = tempPoint[1] + waveOffset;
-                const colorT = ((t - phase * 0.5) % 1 + 1) % 1;
+                const colorT = ((t - phase * 1.5) % 1 + 1) % 1;
                 const colorIndex = Math.floor(colorT * auroraColors.length) % auroraColors.length;
                 const auroraColor = auroraColors[colorIndex];
-                const pulse = 0.5 + fastSin(phase * 3 + t * Math.PI * 2) * 0.5;
+                const pulse = 0.5 + fastSin(-phase * 6 + t * Math.PI * 2) * 0.5;
                 ctx.shadowBlur = 20 * pulse;
                 ctx.shadowColor = auroraColor;
                 ctx.fillStyle = auroraColor;

@@ -415,8 +415,8 @@ app.registerExtension({
                                 const t = i / numCrystals;
                                 renderer.getPoint(start, end, t, tempPoint);
 
-                                // Crystal shimmer effect
-                                const shimmer = 0.6 + fastSin(phase * 4 + i * 2) * 0.4;
+                                // Crystal shimmer effect - negative phase for output→input flow
+                                const shimmer = 0.6 + fastSin(-phase * 4 + i * 2) * 0.4;
                                 const crystalColor = frostColors[i % frostColors.length];
 
                                 // Outer glow
@@ -454,18 +454,18 @@ app.registerExtension({
                                 const t = i / numPoints;
                                 renderer.getPoint(start, end, t, tempPoint);
 
-                                // Undulating wave offset
-                                const waveOffset = fastSin(t * Math.PI * 3 + phase * 2) * 8;
+                                // Undulating wave offset - negative phase for output→input flow
+                                const waveOffset = fastSin(t * Math.PI * 3 - phase * 6) * 8;
                                 const x = tempPoint[0];
                                 const y = tempPoint[1] + waveOffset;
 
-                                // Color cycling through aurora palette - ensure positive modulo
-                                const colorT = ((t - phase * 0.5) % 1 + 1) % 1;
+                                // Color cycling through aurora palette - negative phase for output→input flow
+                                const colorT = ((t - phase * 1.5) % 1 + 1) % 1;
                                 const colorIndex = Math.floor(colorT * auroraColors.length) % auroraColors.length;
                                 const auroraColor = auroraColors[colorIndex];
 
                                 // Pulsing intensity
-                                const pulse = 0.5 + fastSin(phase * 3 + t * Math.PI * 2) * 0.5;
+                                const pulse = 0.5 + fastSin(-phase * 6 + t * Math.PI * 2) * 0.5;
 
                                 ctx.shadowBlur = 20 * pulse;
                                 ctx.shadowColor = auroraColor;
