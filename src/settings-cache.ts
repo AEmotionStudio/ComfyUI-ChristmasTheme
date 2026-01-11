@@ -72,8 +72,14 @@ let cacheInitialized = false;
  */
 export function initSettingsCache(): void {
     if (cacheInitialized) return;
+
+    // Load all known settings from storage
+    Object.keys(SETTING_DEFAULTS).forEach(key => {
+        loadSettingFromStorage(key);
+    });
+
     cacheInitialized = true;
-    console.log("🎄 Settings cache initialized");
+    console.log("🎄 Settings cache initialized with saved values");
 }
 
 /**

@@ -34,8 +34,11 @@ const settingsCache = { ...SETTING_DEFAULTS };
 let cacheInitialized = false;
 function initSettingsCache() {
   if (cacheInitialized) return;
+  Object.keys(SETTING_DEFAULTS).forEach((key) => {
+    loadSettingFromStorage(key);
+  });
   cacheInitialized = true;
-  console.log("🎄 Settings cache initialized");
+  console.log("🎄 Settings cache initialized with saved values");
 }
 function loadSettingFromStorage(key) {
   try {
