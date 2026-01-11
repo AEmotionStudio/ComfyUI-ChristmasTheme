@@ -276,7 +276,41 @@ const SETTINGS_CONFIG: SettingsConfigType = {
 // ============================================================================
 
 /**
- * Handle file upload for custom assets
+ * Optimize image for use as snowflake - resize to max 128x128 and convert to WebP
+ */
+async function optimizeImage(dataUrl: string, maxSize = 128): Promise<string> {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let { width, height } = img;
+
+            // Scale down to max dimension while preserving aspect ratio
+            if (width > maxSize || height > maxSize) {
+                const ratio = Math.min(maxSize / width, maxSize / height);
+                width = Math.round(width * ratio);
+                height = Math.round(height * ratio);
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d')!;
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Try WebP first (better compression), fallback to PNG
+            let result = canvas.toDataURL('image/webp', 0.85);
+            if (!result.startsWith('data:image/webp')) {
+                result = canvas.toDataURL('image/png');
+            }
+            resolve(result);
+        };
+        img.onerror = () => resolve(dataUrl); // Fallback to original if loading fails
+        img.src = dataUrl;
+    });
+}
+
+/**
+ * Handle file upload for custom assets - now with automatic optimization
  */
 function handleFileUpload(callback: (base64: string) => void) {
     const input = el('input', { type: 'file', accept: 'image/*' });
@@ -284,16 +318,22 @@ function handleFileUpload(callback: (base64: string) => void) {
         const file = (e.target as HTMLInputElement).files?.[0];
         if (!file) return;
 
-        // Size check (max 2MB to be safe with localStorage quotas)
-        if (file.size > 2 * 1024 * 1024) {
-            alert("Image too large! Please select an image under 2MB.");
+        // Size check (max 5MB for original, will be compressed)
+        if (file.size > 5 * 1024 * 1024) {
+            alert("Image too large! Please select an image under 5MB.");
             return;
         }
 
         const reader = new FileReader();
         reader.onload = (evt) => {
             const res = evt.target?.result as string;
-            if (res) callback(res);
+            if (res) {
+                // Optimize image before saving
+                optimizeImage(res).then(optimized => {
+                    console.log(`🎨 Image optimized: ${Math.round(res.length / 1024)}KB → ${Math.round(optimized.length / 1024)}KB`);
+                    callback(optimized);
+                });
+            }
         };
         reader.readAsDataURL(file);
     };

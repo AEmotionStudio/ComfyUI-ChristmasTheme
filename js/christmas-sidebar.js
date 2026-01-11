@@ -247,21 +247,51 @@ const SETTINGS_CONFIG = {
     ]
   }
 };
+async function optimizeImage(dataUrl, maxSize = 128) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      let { width, height } = img;
+      if (width > maxSize || height > maxSize) {
+        const ratio = Math.min(maxSize / width, maxSize / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, width, height);
+      let result = canvas.toDataURL("image/webp", 0.85);
+      if (!result.startsWith("data:image/webp")) {
+        result = canvas.toDataURL("image/png");
+      }
+      resolve(result);
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
 function handleFileUpload(callback) {
   const input = el("input", { type: "file", accept: "image/*" });
   input.onchange = (e) => {
     var _a;
     const file = (_a = e.target.files) == null ? void 0 : _a[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      alert("Image too large! Please select an image under 2MB.");
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Image too large! Please select an image under 5MB.");
       return;
     }
     const reader = new FileReader();
     reader.onload = (evt) => {
       var _a2;
       const res = (_a2 = evt.target) == null ? void 0 : _a2.result;
-      if (res) callback(res);
+      if (res) {
+        optimizeImage(res).then((optimized) => {
+          console.log(`🎨 Image optimized: ${Math.round(res.length / 1024)}KB → ${Math.round(optimized.length / 1024)}KB`);
+          callback(optimized);
+        });
+      }
     };
     reader.readAsDataURL(file);
   };

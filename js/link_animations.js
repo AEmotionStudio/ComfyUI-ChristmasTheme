@@ -65,23 +65,115 @@ app.registerExtension({
       })),
       linkDataIndex: 0
     };
-    const LinkRenderer = {
-      getLength(start, end) {
-        const dx = end[0] - start[0];
-        const dy = end[1] - start[1];
-        return Math.sqrt(dx * dx + dy * dy);
+    const LinkRenderers = {
+      spline: {
+        getLength(start, end) {
+          const dx = end[0] - start[0];
+          const dy = end[1] - start[1];
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          return dist * 1.15;
+        },
+        getPoint(start, end, t, out) {
+          const dx = end[0] - start[0];
+          const dy = end[1] - start[1];
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const bendDistance = Math.min(dist * 0.5, 100);
+          const p0x = start[0], p0y = start[1];
+          const p1x = start[0] + bendDistance, p1y = start[1];
+          const p2x = end[0] - bendDistance, p2y = end[1];
+          const p3x = end[0], p3y = end[1];
+          const t2 = t * t;
+          const t3 = t2 * t;
+          const mt = 1 - t;
+          const mt2 = mt * mt;
+          const mt3 = mt2 * mt;
+          out[0] = mt3 * p0x + 3 * mt2 * t * p1x + 3 * mt * t2 * p2x + t3 * p3x;
+          out[1] = mt3 * p0y + 3 * mt2 * t * p1y + 3 * mt * t2 * p2y + t3 * p3y;
+        },
+        draw(ctx, start, end, color, thickness) {
+          const dx = end[0] - start[0];
+          const dy = end[1] - start[1];
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const bendDistance = Math.min(dist * 0.5, 100);
+          ctx.beginPath();
+          ctx.moveTo(start[0], start[1]);
+          ctx.bezierCurveTo(
+            start[0] + bendDistance,
+            start[1],
+            end[0] - bendDistance,
+            end[1],
+            end[0],
+            end[1]
+          );
+          ctx.strokeStyle = color;
+          ctx.lineWidth = thickness * 0.8;
+          ctx.stroke();
+        }
       },
-      getPoint(start, end, t, out) {
-        out[0] = start[0] + (end[0] - start[0]) * t;
-        out[1] = start[1] + (end[1] - start[1]) * t;
+      straight: {
+        getLength(start, end) {
+          const dx = end[0] - start[0];
+          const dy = end[1] - start[1];
+          return Math.sqrt(dx * dx + dy * dy);
+        },
+        getPoint(start, end, t, out) {
+          out[0] = start[0] + (end[0] - start[0]) * t;
+          out[1] = start[1] + (end[1] - start[1]) * t;
+        },
+        draw(ctx, start, end, color, thickness) {
+          ctx.beginPath();
+          ctx.moveTo(start[0], start[1]);
+          ctx.lineTo(end[0], end[1]);
+          ctx.strokeStyle = color;
+          ctx.lineWidth = thickness * 0.8;
+          ctx.stroke();
+        }
       },
-      draw(ctx, start, end, color, thickness) {
-        ctx.strokeStyle = color;
-        ctx.lineWidth = thickness;
-        ctx.beginPath();
-        ctx.moveTo(start[0], start[1]);
-        ctx.lineTo(end[0], end[1]);
-        ctx.stroke();
+      linear: {
+        getLength(start, end) {
+          const midX = (start[0] + end[0]) / 2;
+          return Math.abs(midX - start[0]) + Math.abs(end[1] - start[1]) + Math.abs(end[0] - midX);
+        },
+        getPoint(start, end, t, out) {
+          const midX = (start[0] + end[0]) / 2;
+          if (t <= 0.33) {
+            const segmentT = t / 0.33;
+            out[0] = start[0] + (midX - start[0]) * segmentT;
+            out[1] = start[1];
+          } else if (t <= 0.67) {
+            const segmentT = (t - 0.33) / 0.34;
+            out[0] = midX;
+            out[1] = start[1] + (end[1] - start[1]) * segmentT;
+          } else {
+            const segmentT = (t - 0.67) / 0.33;
+            out[0] = midX + (end[0] - midX) * segmentT;
+            out[1] = end[1];
+          }
+        },
+        draw(ctx, start, end, color, thickness) {
+          const midX = (start[0] + end[0]) / 2;
+          ctx.beginPath();
+          ctx.moveTo(start[0], start[1]);
+          ctx.lineTo(midX, start[1]);
+          ctx.lineTo(midX, end[1]);
+          ctx.lineTo(end[0], end[1]);
+          ctx.strokeStyle = color;
+          ctx.lineWidth = thickness * 0.8;
+          ctx.stroke();
+        }
+      },
+      hidden: {
+        getLength(start, end) {
+          const dx = end[0] - start[0];
+          const dy = end[1] - start[1];
+          return Math.sqrt(dx * dx + dy * dy);
+        },
+        getPoint(start, end, t, out) {
+          out[0] = start[0] + (end[0] - start[0]) * t;
+          out[1] = start[1] + (end[1] - start[1]) * t;
+        },
+        draw() {
+        }
       }
     };
     const SIN_TABLE_SIZE = 1024;
@@ -124,7 +216,7 @@ app.registerExtension({
       const origDrawConnections = LGraphCanvas.prototype.drawConnections;
       console.log("🎄 Installing Christmas Lights (Optimized)...");
       LGraphCanvas.prototype.renderChristmasLights = function(ctx, items, phase) {
-        const animStyle = getSetting("ChristmasTheme.ChristmasEffects.LightSwitch");
+        getSetting("ChristmasTheme.ChristmasEffects.LightSwitch");
         const currentSchemeName = getSetting("ChristmasTheme.ChristmasEffects.ColorScheme");
         const christmasColors = COLOR_SCHEMES[currentSchemeName] || COLOR_SCHEMES.traditional;
         const bulbShape = getSetting("ChristmasTheme.ChristmasEffects.BulbShape");
@@ -133,90 +225,78 @@ app.registerExtension({
         const skipCaps = settings.skipCaps;
         const reducedGlow = settings.reducedGlow;
         const glowIntensity = getSetting("ChristmasTheme.ChristmasEffects.GlowIntensity");
-        const steadyTwinkle = getSetting("ChristmasTheme.ChristmasEffects.SteadyStrands");
-        const sparkleMode = getSetting("ChristmasTheme.ChristmasEffects.SparkleMode");
         const colorCount = christmasColors.length;
         const linkStyle = getSetting("ChristmasTheme.LinkRenderMode") || "spline";
-        const renderer = LinkRenderer;
+        const renderer = LinkRenderers[linkStyle] || LinkRenderers.spline;
         const tempPoint = new Float32Array(2);
-        const Thickness = 2;
+        const Thickness = getSetting("ChristmasTheme.ChristmasEffects.Thickness") || 3;
         const Direction = -1;
-        if (animStyle === 4) {
+        const effectMode = getSetting("ChristmasTheme.ChristmasEffects.Twinkle");
+        const candyCaneMode = effectMode === "candycane";
+        const frostMode = effectMode === "frost";
+        const auroraMode = effectMode === "aurora";
+        if (candyCaneMode || frostMode || auroraMode) {
           for (let itemIdx = 0; itemIdx < items.length; itemIdx++) {
             const { start, end, color } = items[itemIdx];
-            ctx.shadowBlur = 4;
-            ctx.shadowColor = "#aaddff";
-            ctx.strokeStyle = "#ffffff";
-            ctx.lineWidth = 2.5;
-            ctx.beginPath();
-            ctx.moveTo(start[0], start[1]);
-            ctx.lineTo(end[0], end[1]);
-            ctx.stroke();
-            const length = renderer.getLength(start, end);
-            const particleCount = Math.floor(length / 20);
-            const time = performance.now() / 1e3;
-            ctx.shadowBlur = 8;
-            ctx.fillStyle = "#ffffff";
-            for (let i = 0; i < particleCount; i++) {
-              const speed = 0.5 + i % 3 * 0.2;
-              let t = (time * speed + i / particleCount) % 1;
-              renderer.getPoint(start, end, t, tempPoint);
-              const x = tempPoint[0];
-              const y = tempPoint[1];
-              const size = 1.5 + Math.sin(time * 10 + i) * 1;
-              ctx.globalAlpha = 0.6 + Math.sin(time * 5 + i) * 0.4;
-              ctx.beginPath();
-              ctx.arc(x, y, size, 0, Math.PI * 2);
-              ctx.fill();
-            }
-            ctx.globalAlpha = 1;
-          }
-          return;
-        }
-        if (animStyle === 2) {
-          ctx.lineCap = "round";
-          for (let itemIdx = 0; itemIdx < items.length; itemIdx++) {
-            const { start, end } = items[itemIdx];
-            ctx.strokeStyle = "#ffffff";
-            ctx.lineWidth = 5;
-            ctx.beginPath();
-            ctx.moveTo(start[0], start[1]);
-            ctx.lineTo(end[0], end[1]);
-            ctx.stroke();
-            ctx.strokeStyle = "#ff0000";
-            ctx.lineWidth = 5;
-            ctx.setLineDash([15, 15]);
-            ctx.lineDashOffset = -phase * 30;
-            ctx.beginPath();
-            ctx.moveTo(start[0], start[1]);
-            ctx.lineTo(end[0], end[1]);
-            ctx.stroke();
-            ctx.setLineDash([]);
-          }
-          return;
-        }
-        if (animStyle === 5) {
-          ctx.lineCap = "round";
-          const auroraColors = ["#00ffaa", "#00aaff", "#aa00ff", "#ff00aa"];
-          for (let itemIdx = 0; itemIdx < items.length; itemIdx++) {
-            const { start, end } = items[itemIdx];
-            const length = renderer.getLength(start, end);
-            for (let layer = 0; layer < 3; layer++) {
-              const grad = ctx.createLinearGradient(start[0], start[1], end[0], end[1]);
-              for (let c = 0; c < auroraColors.length; c++) {
-                const colorPos = (c / (auroraColors.length - 1) + phase * 0.2) % 1;
-                grad.addColorStop(colorPos, auroraColors[c]);
+            const totalLength = renderer.getLength(start, end);
+            if (candyCaneMode) {
+              const stripeWidth = 15;
+              const numSegments = Math.floor(totalLength / 3);
+              for (let i = 0; i <= numSegments; i++) {
+                const t = i / numSegments;
+                renderer.getPoint(start, end, t, tempPoint);
+                const stripePhase = ((t * totalLength / stripeWidth - phase * 3) % 1 + 1) % 1;
+                const isRed = stripePhase < 0.5;
+                ctx.fillStyle = isRed ? "#ff0000" : "#ffffff";
+                ctx.shadowBlur = isRed ? 8 : 4;
+                ctx.shadowColor = isRed ? "#ff0000" : "#ffffff";
+                ctx.globalAlpha = 0.9;
+                ctx.beginPath();
+                ctx.arc(tempPoint[0], tempPoint[1], Thickness * 1.2, 0, Math.PI * 2);
+                ctx.fill();
               }
-              const particles = Math.floor(length / 10);
-              for (let p = 0; p < particles; p++) {
-                const t2 = (p / particles + phase * 0.1) % 1;
-                renderer.getPoint(start, end, t2, tempPoint);
+            } else if (frostMode) {
+              const numCrystals = Math.floor(totalLength / baseSpacing);
+              const frostColors = ["#e0ffff", "#b0e0e6", "#87ceeb", "#add8e6", "#ffffff"];
+              for (let i = 0; i <= numCrystals; i++) {
+                const t = i / numCrystals;
+                renderer.getPoint(start, end, t, tempPoint);
+                const shimmer = 0.6 + fastSin(phase * 4 + i * 2) * 0.4;
+                const crystalColor = frostColors[i % frostColors.length];
+                ctx.shadowBlur = 15 * shimmer;
+                ctx.shadowColor = "#87ceeb";
+                ctx.fillStyle = crystalColor;
+                ctx.globalAlpha = shimmer * 0.8;
+                const size = Thickness * (1 + shimmer * 0.5);
+                ctx.beginPath();
+                for (let p = 0; p < 6; p++) {
+                  const angle = p / 6 * Math.PI * 2 - Math.PI / 2;
+                  const px = tempPoint[0] + Math.cos(angle) * size;
+                  const py = tempPoint[1] + Math.sin(angle) * size;
+                  if (p === 0) ctx.moveTo(px, py);
+                  else ctx.lineTo(px, py);
+                }
+                ctx.closePath();
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(tempPoint[0], tempPoint[1], size * 0.3, 0, Math.PI * 2);
+                ctx.fillStyle = "#ffffff";
+                ctx.globalAlpha = shimmer;
+                ctx.fill();
+              }
+            } else if (auroraMode) {
+              const numPoints = Math.floor(totalLength / 5);
+              const auroraColors = ["#00ff88", "#00ffcc", "#00ccff", "#0088ff", "#8800ff", "#ff00ff"];
+              for (let i = 0; i <= numPoints; i++) {
+                const t = i / numPoints;
+                renderer.getPoint(start, end, t, tempPoint);
+                const waveOffset = fastSin(t * Math.PI * 3 + phase * 2) * 8;
                 const x = tempPoint[0];
-                const y = tempPoint[1] + Math.sin(t2 * Math.PI * 4 + phase) * 2;
-                const colorT = (t2 - phase * 0.5 + 1) % 1;
-                const colorIndex = Math.floor(colorT * auroraColors.length);
+                const y = tempPoint[1] + waveOffset;
+                const colorT = ((t - phase * 0.5) % 1 + 1) % 1;
+                const colorIndex = Math.floor(colorT * auroraColors.length) % auroraColors.length;
                 const auroraColor = auroraColors[colorIndex];
-                const pulse = 0.5 + fastSin(phase * 3 + t2 * Math.PI * 2) * 0.5;
+                const pulse = 0.5 + fastSin(phase * 3 + t * Math.PI * 2) * 0.5;
                 ctx.shadowBlur = 20 * pulse;
                 ctx.shadowColor = auroraColor;
                 ctx.fillStyle = auroraColor;
@@ -279,9 +359,9 @@ app.registerExtension({
             const colorIndex = ((i - Math.floor(phase * 2 * Direction)) % colorCount + colorCount) % colorCount;
             const lightColor = christmasColors[colorIndex];
             let flicker;
-            if (steadyTwinkle) {
+            if (effectMode === "steady") {
               flicker = 1;
-            } else if (sparkleMode) {
+            } else if (effectMode === "sparkle") {
               flicker = 0.7 + fastSin(-phase * 8 + i * 5) * 0.3 * Math.random();
             } else {
               flicker = 0.85 + fastSin(-phase * 5 + i * 3) * 0.15;
