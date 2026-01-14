@@ -450,7 +450,8 @@ function renderSidebar(elRoot) {
   const footer = el("div", { className: "christmas-footer" }, [
     el("a", {
       href: "https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme",
-      target: "_blank"
+      target: "_blank",
+      rel: "noopener noreferrer"
     }, ["🎁 GitHub"])
   ]);
   const container = el("div", { className: "christmas-sidebar" }, [
