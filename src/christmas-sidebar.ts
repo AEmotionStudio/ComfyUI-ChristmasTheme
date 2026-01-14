@@ -349,21 +349,35 @@ function createToggle(settingConfig: SettingConfig): HTMLDivElement {
     const currentValue = getSetting(settingConfig.id);
     const isActive = currentValue === trueValue || currentValue === true || currentValue === 1;
 
+    const handleToggle = (t: HTMLElement) => {
+        const wasActive = t.classList.contains('active');
+        const newValue = wasActive ? falseValue : trueValue;
+
+        t.classList.toggle('active');
+        t.ariaChecked = String(!wasActive);
+        updateCache(settingConfig.id, newValue);
+
+        // Also update the native ComfyUI setting
+        app.ui?.settings?.setSettingValue(settingConfig.id, newValue);
+
+        // Force canvas redraw
+        app.canvas?.setDirty(true, true);
+    };
+
     return el('div', {
         className: `christmas-toggle ${isActive ? 'active' : ''}`,
+        role: 'switch',
+        ariaChecked: String(isActive),
+        ariaLabel: settingConfig.label,
+        tabIndex: 0,
         onClick: (e: MouseEvent) => {
-            const t = e.currentTarget as HTMLElement;
-            const wasActive = t.classList.contains('active');
-            const newValue = wasActive ? falseValue : trueValue;
-
-            t.classList.toggle('active');
-            updateCache(settingConfig.id, newValue);
-
-            // Also update the native ComfyUI setting
-            app.ui?.settings?.setSettingValue(settingConfig.id, newValue);
-
-            // Force canvas redraw
-            app.canvas?.setDirty(true, true);
+            handleToggle(e.currentTarget as HTMLElement);
+        },
+        onKeyDown: (e: KeyboardEvent) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleToggle(e.currentTarget as HTMLElement);
+            }
         }
     });
 }
