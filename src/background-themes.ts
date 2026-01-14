@@ -78,6 +78,8 @@ interface BgSnowflake {
     rotationSpeed: number;
     alpha?: number;
     color: string;
+    // Cache RGB components to avoid hex parsing every frame
+    rgb?: string;
     type?: number;
     opacity?: number;
     drift?: number;
@@ -437,10 +439,19 @@ function createExplosionParticles(x: number, y: number, palette: string[], explo
     return particles;
 }
 
+// Helper to convert hex to RGB string "r,g,b"
+function hexToRgbString(hex: string): string {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `${r}, ${g}, ${b}`;
+}
+
 // Function to update all background snowflake colors when settings change
 function updateBgSnowflakeColors() {
     for (const flake of bgSnowflakeEntities) {
         flake.color = getBgSnowflakeColor();
+        flake.rgb = hexToRgbString(flake.color);
     }
 }
 
@@ -1834,12 +1845,14 @@ function initBgSnowflakes(width, height) {
             opacity = 0.4 + Math.random() * 0.2;
         }
 
+        const color = getBgSnowflakeColor();
         bgSnowflakeEntities.push({
             x: Math.random() * width,
             y: Math.random() * height, // Distribute across full height initially
             size: size,
             opacity: opacity,
-            color: getBgSnowflakeColor(), // Match color scheme
+            color: color, // Match color scheme
+            rgb: hexToRgbString(color),
             speed: 8 + Math.random() * 10, // Pixels per second (slower)
             drift: (Math.random() - 0.5) * 25, // Horizontal drift amplitude
             driftSpeed: 0.1 + Math.random() * 0.15, // Drift oscillation speed
@@ -2479,6 +2492,7 @@ function drawEnhancedBackground(ctx, width, height) {
                 flake.y = -20;
                 flake.x = Math.random() * width;
                 flake.color = getBgSnowflakeColor(); // Get new color on wrap
+                flake.rgb = hexToRgbString(flake.color);
                 flake.flakeType = ['branched', 'minimal', 'stellar', 'emoji1', 'emoji2', 'emoji3', 'dendrite', 'ornate'][Math.floor(Math.random() * 8)]; // Random new type
             }
 
@@ -2491,22 +2505,22 @@ function drawEnhancedBackground(ctx, width, height) {
             // Draw subtle glow (matching CSS drop-shadow appearance)
             const glowAmount = Math.min(glowIntensity * 0.4, 8);
             if (glowAmount > 0.5) {
-                // Convert hex color to rgba for canvas compatibility
-                const hexToRgba = (hex, alpha) => {
-                    const r = parseInt(hex.slice(1, 3), 16);
-                    const g = parseInt(hex.slice(3, 5), 16);
-                    const b = parseInt(hex.slice(5, 7), 16);
-                    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-                };
+                // Ensure rgb is available
+                if (!flake.rgb) {
+                    flake.rgb = hexToRgbString(flake.color);
+                }
+                const rgb = flake.rgb;
 
                 const glowRadius = flake.size * 0.6 + glowAmount;
                 const gradient = ctx.createRadialGradient(
                     flake.x + driftX, flake.y, flake.size * 0.1,
                     flake.x + driftX, flake.y, glowRadius
                 );
-                gradient.addColorStop(0, hexToRgba(flake.color, 0.4));
-                gradient.addColorStop(0.5, hexToRgba(flake.color, 0.15));
-                gradient.addColorStop(1, hexToRgba(flake.color, 0));
+                // Use pre-calculated RGB values to construct RGBA strings efficiently
+                gradient.addColorStop(0, `rgba(${rgb}, 0.4)`);
+                gradient.addColorStop(0.5, `rgba(${rgb}, 0.15)`);
+                gradient.addColorStop(1, `rgba(${rgb}, 0)`);
+
                 ctx.globalAlpha = flake.opacity;
                 ctx.fillStyle = gradient;
                 ctx.beginPath();
