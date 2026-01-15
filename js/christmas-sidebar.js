@@ -339,6 +339,7 @@ function createSelect(settingConfig) {
   );
   const select = el("select", {
     className: "christmas-select",
+    ariaLabel: settingConfig.label,
     title: settingConfig.tooltip || "",
     onChange: (e) => {
       var _a, _b, _c;
@@ -370,6 +371,7 @@ function createSelect(settingConfig) {
       textContent: "📁",
       className: "christmas-upload-btn",
       title: "Upload Custom Snowflake",
+      ariaLabel: "Upload Custom Snowflake",
       style: { display: currentValue === "custom" || currentValue === "mix_custom" ? "block" : "none" },
       onClick: () => handleFileUpload((b64) => {
         var _a, _b, _c;
@@ -393,6 +395,7 @@ function createSettingRow(settingConfig) {
     const slider = el("input", {
       type: "range",
       className: "christmas-slider",
+      ariaLabel: settingConfig.label,
       min: String(settingConfig.min || 0),
       max: String(settingConfig.max || 100),
       step: String(settingConfig.step || 1),
