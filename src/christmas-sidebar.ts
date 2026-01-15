@@ -397,6 +397,7 @@ function createSelect(settingConfig: SettingConfig): HTMLElement {
 
     const select = el('select', {
         className: 'christmas-select',
+        ariaLabel: settingConfig.label,
         title: settingConfig.tooltip || '',
         onChange: (e: Event) => {
             const sel = e.target as HTMLSelectElement;
@@ -434,6 +435,7 @@ function createSelect(settingConfig: SettingConfig): HTMLElement {
             textContent: '📁',
             className: 'christmas-upload-btn',
             title: 'Upload Custom Snowflake',
+            ariaLabel: 'Upload Custom Snowflake',
             style: { display: (currentValue === 'custom' || currentValue === 'mix_custom') ? 'block' : 'none' },
             onClick: () => handleFileUpload((b64) => {
                 const imageKey = settingConfig.id.replace(/(Type|ColorTheme)$/, 'CustomImage');
@@ -465,6 +467,7 @@ function createSlider(settingConfig: SettingConfig): HTMLDivElement {
     const slider = el('input', {
         type: 'range',
         className: 'christmas-slider',
+        ariaLabel: settingConfig.label,
         min: String(settingConfig.min || 0),
         max: String(settingConfig.max || 100),
         step: String(settingConfig.step || 1),
@@ -498,6 +501,7 @@ function createSettingRow(settingConfig: SettingConfig): HTMLDivElement {
         const slider = el('input', {
             type: 'range',
             className: 'christmas-slider',
+            ariaLabel: settingConfig.label,
             min: String(settingConfig.min || 0),
             max: String(settingConfig.max || 100),
             step: String(settingConfig.step || 1),
