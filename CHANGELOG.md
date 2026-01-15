@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.4] - 2026-01-15
+
+### Jan 15, 2026
+- **Performance**: Pre-calculated RGBA color strings for snowflake gradients. This reduces string allocations in the render loop by ~8100/sec, significantly lowering CPU overhead and garbage collection pressure during animations (PR #16).
+- **Bug Fix**: Fixed an unbounded recursive timer in background themes that could lead to memory leaks and performance degradation over time (PR #15).
+- **Accessibility**: Added comprehensive ARIA labels to sidebar controls to improve screen reader compatibility and overall accessibility (PR #14).
+- **Core**: Updated the New Year countdown target year to 2027 to ensure continued festive functionality.
+
+### Jan 14, 2026
+- **Performance**: Initial optimizations for snowflake rendering performance to maintain smooth frame rates on lower-end devices (PR #13).
+- **Security**: Fixed security vulnerability by adding missing `rel="noopener"` attributes to external links in the sidebar and about sections (PR #12).
+
+
 ## [1.4.3] - 2026-01-11
 
 ### Added

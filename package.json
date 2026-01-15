@@ -1,6 +1,6 @@
 {
   "name": "comfyui-christmastheme",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "type": "module",
   "description": "A beautiful theme extension for ComfyUI with festive backgrounds, snowfall effects, and animated node connections",
   "scripts": {
