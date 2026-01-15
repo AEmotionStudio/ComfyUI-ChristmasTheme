@@ -2955,12 +2955,19 @@ function stopAnimationLoop() {
 /**
  * Hook into LGraphCanvas to draw our background
  */
+let hookRetryCount = 0;
 function installBackgroundHook() {
     if (!app.canvas) {
+        if (hookRetryCount++ > 50) {
+            console.warn("❌ Failed to install background hook: app.canvas not available after 5s");
+            hookRetryCount = 0;
+            return;
+        }
         console.log("Waiting for app.canvas to install background hook...");
         setTimeout(installBackgroundHook, 100);
         return;
     }
+    hookRetryCount = 0;
 
     const canvas = app.canvas;
 
