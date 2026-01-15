@@ -80,6 +80,8 @@ interface BgSnowflake {
     color: string;
     // Cache RGB components to avoid hex parsing every frame
     rgb?: string;
+    // Cache full RGBA strings to avoid string concatenation every frame
+    rgbaStrings?: [string, string, string];
     type?: number;
     opacity?: number;
     drift?: number;
@@ -447,11 +449,22 @@ function hexToRgbString(hex: string): string {
     return `${r}, ${g}, ${b}`;
 }
 
+// Helper to update cached color strings for a flake
+function updateFlakeRgba(flake: BgSnowflake) {
+    flake.rgb = hexToRgbString(flake.color);
+    // Pre-calculate the gradient color strings to avoid allocation in the render loop
+    flake.rgbaStrings = [
+        `rgba(${flake.rgb}, 0.4)`,
+        `rgba(${flake.rgb}, 0.15)`,
+        `rgba(${flake.rgb}, 0)`
+    ];
+}
+
 // Function to update all background snowflake colors when settings change
 function updateBgSnowflakeColors() {
     for (const flake of bgSnowflakeEntities) {
         flake.color = getBgSnowflakeColor();
-        flake.rgb = hexToRgbString(flake.color);
+        updateFlakeRgba(flake);
     }
 }
 
@@ -1846,13 +1859,12 @@ function initBgSnowflakes(width, height) {
         }
 
         const color = getBgSnowflakeColor();
-        bgSnowflakeEntities.push({
+        const flake: BgSnowflake = {
             x: Math.random() * width,
             y: Math.random() * height, // Distribute across full height initially
             size: size,
             opacity: opacity,
             color: color, // Match color scheme
-            rgb: hexToRgbString(color),
             speed: 8 + Math.random() * 10, // Pixels per second (slower)
             drift: (Math.random() - 0.5) * 25, // Horizontal drift amplitude
             driftSpeed: 0.1 + Math.random() * 0.15, // Drift oscillation speed
@@ -1860,7 +1872,9 @@ function initBgSnowflakes(width, height) {
             rotation: Math.random() * Math.PI * 2, // Initial rotation
             rotationSpeed: (Math.random() - 0.5) * 0.3, // Slow rotation
             flakeType: ['branched', 'minimal', 'stellar', 'emoji1', 'emoji2', 'emoji3', 'dendrite', 'ornate'][Math.floor(Math.random() * 8)] // Random type
-        });
+        };
+        updateFlakeRgba(flake);
+        bgSnowflakeEntities.push(flake);
     }
     bgSnowflakesInitialized = true;
     console.log(`❄️ Created ${count} background canvas snowflakes`);
@@ -2492,7 +2506,7 @@ function drawEnhancedBackground(ctx, width, height) {
                 flake.y = -20;
                 flake.x = Math.random() * width;
                 flake.color = getBgSnowflakeColor(); // Get new color on wrap
-                flake.rgb = hexToRgbString(flake.color);
+                updateFlakeRgba(flake);
                 flake.flakeType = ['branched', 'minimal', 'stellar', 'emoji1', 'emoji2', 'emoji3', 'dendrite', 'ornate'][Math.floor(Math.random() * 8)]; // Random new type
             }
 
@@ -2506,10 +2520,9 @@ function drawEnhancedBackground(ctx, width, height) {
             const glowAmount = Math.min(glowIntensity * 0.4, 8);
             if (glowAmount > 0.5) {
                 // Ensure rgb is available
-                if (!flake.rgb) {
-                    flake.rgb = hexToRgbString(flake.color);
+                if (!flake.rgb || !flake.rgbaStrings) {
+                    updateFlakeRgba(flake);
                 }
-                const rgb = flake.rgb;
 
                 const glowRadius = flake.size * 0.6 + glowAmount;
                 const gradient = ctx.createRadialGradient(
@@ -2517,9 +2530,10 @@ function drawEnhancedBackground(ctx, width, height) {
                     flake.x + driftX, flake.y, glowRadius
                 );
                 // Use pre-calculated RGB values to construct RGBA strings efficiently
-                gradient.addColorStop(0, `rgba(${rgb}, 0.4)`);
-                gradient.addColorStop(0.5, `rgba(${rgb}, 0.15)`);
-                gradient.addColorStop(1, `rgba(${rgb}, 0)`);
+                // Use non-null assertion since we ensured it exists above
+                gradient.addColorStop(0, flake.rgbaStrings![0]);
+                gradient.addColorStop(0.5, flake.rgbaStrings![1]);
+                gradient.addColorStop(1, flake.rgbaStrings![2]);
 
                 ctx.globalAlpha = flake.opacity;
                 ctx.fillStyle = gradient;

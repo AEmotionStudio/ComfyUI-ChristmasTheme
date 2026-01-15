@@ -216,9 +216,24 @@ function createExplosionParticles(x, y, palette, explosionType) {
   }
   return particles;
 }
+function hexToRgbString(hex) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `${r}, ${g}, ${b}`;
+}
+function updateFlakeRgba(flake) {
+  flake.rgb = hexToRgbString(flake.color);
+  flake.rgbaStrings = [
+    `rgba(${flake.rgb}, 0.4)`,
+    `rgba(${flake.rgb}, 0.15)`,
+    `rgba(${flake.rgb}, 0)`
+  ];
+}
 function updateBgSnowflakeColors() {
   for (const flake of bgSnowflakeEntities) {
     flake.color = getBgSnowflakeColor();
+    updateFlakeRgba(flake);
   }
 }
 let countdownElement = null;
@@ -1515,13 +1530,14 @@ function initBgSnowflakes(width, height) {
       size = 6 + Math.random() * 3;
       opacity = 0.4 + Math.random() * 0.2;
     }
-    bgSnowflakeEntities.push({
+    const color = getBgSnowflakeColor();
+    const flake = {
       x: Math.random() * width,
       y: Math.random() * height,
       // Distribute across full height initially
       size,
       opacity,
-      color: getBgSnowflakeColor(),
+      color,
       // Match color scheme
       speed: 8 + Math.random() * 10,
       // Pixels per second (slower)
@@ -1537,7 +1553,9 @@ function initBgSnowflakes(width, height) {
       // Slow rotation
       flakeType: ["branched", "minimal", "stellar", "emoji1", "emoji2", "emoji3", "dendrite", "ornate"][Math.floor(Math.random() * 8)]
       // Random type
-    });
+    };
+    updateFlakeRgba(flake);
+    bgSnowflakeEntities.push(flake);
   }
   bgSnowflakesInitialized = true;
   console.log(`❄️ Created ${count} background canvas snowflakes`);
@@ -1959,6 +1977,7 @@ function drawEnhancedBackground(ctx, width, height) {
         flake.y = -20;
         flake.x = Math.random() * width;
         flake.color = getBgSnowflakeColor();
+        updateFlakeRgba(flake);
         flake.flakeType = ["branched", "minimal", "stellar", "emoji1", "emoji2", "emoji3", "dendrite", "ornate"][Math.floor(Math.random() * 8)];
       }
       ctx.globalAlpha = flake.opacity;
@@ -1967,12 +1986,9 @@ function drawEnhancedBackground(ctx, width, height) {
       ctx.lineWidth = Math.max(0.5, flake.size * 0.12);
       const glowAmount = Math.min(glowIntensity * 0.4, 8);
       if (glowAmount > 0.5) {
-        const hexToRgba = (hex, alpha) => {
-          const r = parseInt(hex.slice(1, 3), 16);
-          const g = parseInt(hex.slice(3, 5), 16);
-          const b = parseInt(hex.slice(5, 7), 16);
-          return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-        };
+        if (!flake.rgb || !flake.rgbaStrings) {
+          updateFlakeRgba(flake);
+        }
         const glowRadius = flake.size * 0.6 + glowAmount;
         const gradient2 = ctx.createRadialGradient(
           flake.x + driftX,
@@ -1982,9 +1998,9 @@ function drawEnhancedBackground(ctx, width, height) {
           flake.y,
           glowRadius
         );
-        gradient2.addColorStop(0, hexToRgba(flake.color, 0.4));
-        gradient2.addColorStop(0.5, hexToRgba(flake.color, 0.15));
-        gradient2.addColorStop(1, hexToRgba(flake.color, 0));
+        gradient2.addColorStop(0, flake.rgbaStrings[0]);
+        gradient2.addColorStop(0.5, flake.rgbaStrings[1]);
+        gradient2.addColorStop(1, flake.rgbaStrings[2]);
         ctx.globalAlpha = flake.opacity;
         ctx.fillStyle = gradient2;
         ctx.beginPath();
