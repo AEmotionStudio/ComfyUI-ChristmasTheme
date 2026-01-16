@@ -5,7 +5,7 @@
 
 // @ts-ignore - ComfyUI external module
 import { app } from "../../../scripts/app.js";
-import { getSetting, updateCache } from "./settings-cache";
+import { getDefaults, getSetting, updateCache } from "./settings-cache";
 // @ts-ignore
 import SIDEBAR_STYLES from './sidebar.css?inline';
 import { el } from "./utils/dom";
@@ -369,6 +369,7 @@ function createToggle(settingConfig: SettingConfig): HTMLDivElement {
         role: 'switch',
         ariaChecked: String(isActive),
         ariaLabel: settingConfig.label,
+        title: settingConfig.tooltip || '',
         tabIndex: 0,
         onClick: (e: MouseEvent) => {
             handleToggle(e.currentTarget as HTMLElement);
@@ -468,6 +469,7 @@ function createSlider(settingConfig: SettingConfig): HTMLDivElement {
         type: 'range',
         className: 'christmas-slider',
         ariaLabel: settingConfig.label,
+        title: settingConfig.tooltip || '',
         min: String(settingConfig.min || 0),
         max: String(settingConfig.max || 100),
         step: String(settingConfig.step || 1),
@@ -502,6 +504,7 @@ function createSettingRow(settingConfig: SettingConfig): HTMLDivElement {
             type: 'range',
             className: 'christmas-slider',
             ariaLabel: settingConfig.label,
+            title: settingConfig.tooltip || '',
             min: String(settingConfig.min || 0),
             max: String(settingConfig.max || 100),
             step: String(settingConfig.step || 1),
@@ -518,7 +521,7 @@ function createSettingRow(settingConfig: SettingConfig): HTMLDivElement {
         return el('div', { className: 'christmas-setting-row' }, [
             el('div', { className: 'christmas-slider-row' }, [
                 el('div', { className: 'christmas-slider-header' }, [
-                    el('span', { className: 'christmas-setting-label' }, [settingConfig.label]),
+                    el('span', { className: 'christmas-setting-label', title: settingConfig.tooltip || '' }, [settingConfig.label]),
                     valueLabel
                 ]),
                 el('div', { className: 'christmas-slider-container' }, [slider])
@@ -574,6 +577,22 @@ function renderSidebar(elRoot: HTMLElement): void {
     );
 
     const footer = el('div', { className: 'christmas-footer' }, [
+        el('button', {
+            className: 'christmas-reset-btn',
+            ariaLabel: 'Reset all settings to default',
+            title: 'Reset all settings to default',
+            onClick: () => {
+                if (confirm('Are you sure you want to reset all Christmas Theme settings to defaults?')) {
+                    const defaults = getDefaults();
+                    Object.entries(defaults).forEach(([key, value]) => {
+                        updateCache(key, value);
+                        app.ui?.settings?.setSettingValue(key, value);
+                    });
+                    app.canvas?.setDirty(true, true);
+                    renderSidebar(elRoot); // Re-render to show new values
+                }
+            }
+        }, ["↺ Reset Defaults"]),
         el('a', {
             href: "https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme",
             target: "_blank",
