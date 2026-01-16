@@ -214,6 +214,10 @@
     padding-top: 12px;
     border-top: 1px solid rgba(255, 100, 100, 0.2);
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
 }
 
 .christmas-footer a {
@@ -226,6 +230,23 @@
 .christmas-footer a:hover {
     color: #66ff66;
     text-decoration: underline;
+}
+
+.christmas-reset-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 100, 100, 0.3);
+    color: #aaa;
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 4px 12px;
+    font-size: 11px;
+    transition: all 0.2s;
+}
+
+.christmas-reset-btn:hover {
+    color: #fff;
+    border-color: #ff6b6b;
+    background: rgba(255, 100, 100, 0.1);
 }
 
 .christmas-upload-btn {
