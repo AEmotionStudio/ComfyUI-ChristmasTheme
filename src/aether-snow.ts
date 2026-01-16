@@ -410,6 +410,16 @@ app.registerExtension({
                 updateFlakeGlow(flake);
             };
 
+            // Cache window dimensions to avoid layout thrashing in the loop
+            let windowHeight = window.innerHeight;
+            let windowWidth = window.innerWidth;
+
+            const handleResize = () => {
+                windowHeight = window.innerHeight;
+                windowWidth = window.innerWidth;
+            };
+            window.addEventListener('resize', handleResize);
+
             const animate = (currentTime: number): void => {
                 // When not visible, just keep the loop running but skip everything
                 if (!isPageVisible) {
@@ -430,8 +440,9 @@ app.registerExtension({
                     snowAnimTime += deltaTime; // Only advance animation time when not executing
                 }
 
-                const height = window.innerHeight;
-                const width = window.innerWidth;
+                // Use cached dimensions
+                const height = windowHeight;
+                const width = windowWidth;
 
                 for (const flake of flakes) {
                     // Only update positions if not executing
@@ -477,7 +488,8 @@ app.registerExtension({
                     // Use frozen snowAnimTime for drift so it pauses during execution
                     const driftX = Math.sin(snowAnimTime * flake.driftSpeed + flake.driftOffset) * flake.drift;
                     if (flake.element) {
-                        flake.element.style.transform = `translate(${flake.x + driftX}px, ${flake.y}px) rotate(${flake.rotation}rad)`;
+                        // Use translate3d to force GPU acceleration
+                        flake.element.style.transform = `translate3d(${flake.x + driftX}px, ${flake.y}px, 0) rotate(${flake.rotation}rad)`;
                     }
                 }
 
@@ -545,6 +557,7 @@ app.registerExtension({
             return () => {
                 clearInterval(checkSettings);
                 document.removeEventListener('visibilitychange', handleVisibility);
+                window.removeEventListener('resize', handleResize);
                 if (animationId) cancelAnimationFrame(animationId);
                 container.remove();
                 style.remove();
