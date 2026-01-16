@@ -304,6 +304,13 @@ app.registerExtension({
         }
         updateFlakeGlow(flake);
       };
+      let windowHeight = window.innerHeight;
+      let windowWidth = window.innerWidth;
+      const handleResize = () => {
+        windowHeight = window.innerHeight;
+        windowWidth = window.innerWidth;
+      };
+      window.addEventListener("resize", handleResize);
       const animate = (currentTime) => {
         if (!isPageVisible) {
           animationId = requestAnimationFrame(animate);
@@ -317,8 +324,8 @@ app.registerExtension({
           lastTime = currentTime;
           snowAnimTime += deltaTime;
         }
-        const height = window.innerHeight;
-        const width = window.innerWidth;
+        const height = windowHeight;
+        const width = windowWidth;
         for (const flake of flakes) {
           if (!isExecuting) {
             flake.y += flake.speed * deltaTime;
@@ -353,7 +360,7 @@ app.registerExtension({
           }
           const driftX = Math.sin(snowAnimTime * flake.driftSpeed + flake.driftOffset) * flake.drift;
           if (flake.element) {
-            flake.element.style.transform = `translate(${flake.x + driftX}px, ${flake.y}px) rotate(${flake.rotation}rad)`;
+            flake.element.style.transform = `translate3d(${flake.x + driftX}px, ${flake.y}px, 0) rotate(${flake.rotation}rad)`;
           }
         }
         animationId = requestAnimationFrame(animate);
@@ -405,6 +412,7 @@ app.registerExtension({
       return () => {
         clearInterval(checkSettings);
         document.removeEventListener("visibilitychange", handleVisibility);
+        window.removeEventListener("resize", handleResize);
         if (animationId) cancelAnimationFrame(animationId);
         container.remove();
         style.remove();
