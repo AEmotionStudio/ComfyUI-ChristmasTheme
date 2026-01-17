@@ -596,7 +596,8 @@ function renderSidebar(elRoot: HTMLElement): void {
         el('a', {
             href: "https://github.com/AEmotionStudio/ComfyUI-ChristmasTheme",
             target: "_blank",
-            rel: "noopener noreferrer"
+            rel: "noopener noreferrer",
+            ariaLabel: "Visit GitHub repository (opens in a new tab)"
         }, ["🎁 GitHub"])
     ]);
 
