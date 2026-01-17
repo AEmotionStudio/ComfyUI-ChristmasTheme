@@ -1650,6 +1650,7 @@ function drawMouseParticles(ctx) {
 // Gradient caching
 let cachedGradient = null;
 let cachedHorizonGlow = null;
+let cachedHorizonGlowHeight = 0;
 let cachedTheme = null;
 let cachedWidth = 0;
 let cachedHeight = 0;
@@ -2340,6 +2341,7 @@ function drawEnhancedBackground(ctx, width, height) {
         cachedHeight = height;
         // Reset horizon glow cache when dimensions change
         cachedHorizonGlow = null;
+        cachedHorizonGlowHeight = 0;
         initStars(width, height);
     }
 
@@ -2457,14 +2459,14 @@ function drawEnhancedBackground(ctx, width, height) {
     // Atmospheric glow at horizon (subtle light pollution effect)
     if (!lowPerfMode) {
         // Cache horizon glow gradient (recreate if height changes)
-        if (!cachedHorizonGlow || cachedHeight !== height) {
+        // Use a separate height tracker for horizon glow since cachedHeight is shared
+        if (!cachedHorizonGlow || cachedHorizonGlowHeight !== height) {
             const horizonGlow = ctx.createLinearGradient(0, height * 0.7, 0, height);
             horizonGlow.addColorStop(0, 'rgba(0, 0, 0, 0)');
             horizonGlow.addColorStop(0.5, 'rgba(20, 30, 60, 0.05)');
             horizonGlow.addColorStop(1, 'rgba(40, 50, 80, 0.1)');
             cachedHorizonGlow = horizonGlow;
-            // Ensure cachedHeight is updated if we updated the glow
-            cachedHeight = height;
+            cachedHorizonGlowHeight = height;
         }
         ctx.globalAlpha = 1;
         ctx.fillStyle = cachedHorizonGlow;
