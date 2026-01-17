@@ -76,10 +76,11 @@ describe('Image Security', () => {
 
         // Spy on document.createElement to verify usage
         const createElementSpy = vi.spyOn(document, 'createElement');
+        const originalCreateElement = createElementSpy.getMockImplementation() || document.createElement.bind(document);
 
         // We can rely on jsdom's canvas but need to ensure toDataURL works or is mocked
         // Since we want to control the output, let's mock the canvas instance specifically when 'canvas' is requested
-        createElementSpy.mockImplementation((tagName) => {
+        createElementSpy.mockImplementation((tagName: string, options?: ElementCreationOptions) => {
             if (tagName === 'canvas') {
                 return {
                     width: 0,
@@ -88,7 +89,7 @@ describe('Image Security', () => {
                     toDataURL: (type: string) => `data:${type};base64,mocked_optimized_data`,
                 } as unknown as HTMLElement;
             }
-            return document.createElement(tagName as string);
+            return originalCreateElement(tagName, options);
         });
 
         const validData = 'data:image/png;base64,mock_valid_png_data';
