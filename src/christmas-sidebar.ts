@@ -278,7 +278,7 @@ const SETTINGS_CONFIG: SettingsConfigType = {
 /**
  * Optimize image for use as snowflake - resize to max 128x128 and convert to WebP
  */
-async function optimizeImage(dataUrl: string, maxSize = 128): Promise<string> {
+export async function optimizeImage(dataUrl: string, maxSize = 128): Promise<string | null> {
     return new Promise((resolve) => {
         const img = new Image();
         img.onload = () => {
@@ -304,7 +304,10 @@ async function optimizeImage(dataUrl: string, maxSize = 128): Promise<string> {
             }
             resolve(result);
         };
-        img.onerror = () => resolve(dataUrl); // Fallback to original if loading fails
+        img.onerror = () => {
+            console.error("Failed to load image for optimization - invalid image data");
+            resolve(null); // Return null if loading fails to prevent storing garbage
+        };
         img.src = dataUrl;
     });
 }
@@ -318,6 +321,12 @@ function handleFileUpload(callback: (base64: string) => void) {
         const file = (e.target as HTMLInputElement).files?.[0];
         if (!file) return;
 
+        // Security: Check file type
+        if (!file.type.startsWith('image/')) {
+            alert("Invalid file type! Please select an image.");
+            return;
+        }
+
         // Size check (max 5MB for original, will be compressed)
         if (file.size > 5 * 1024 * 1024) {
             alert("Image too large! Please select an image under 5MB.");
@@ -330,8 +339,12 @@ function handleFileUpload(callback: (base64: string) => void) {
             if (res) {
                 // Optimize image before saving
                 optimizeImage(res).then(optimized => {
-                    console.log(`🎨 Image optimized: ${Math.round(res.length / 1024)}KB → ${Math.round(optimized.length / 1024)}KB`);
-                    callback(optimized);
+                    if (optimized) {
+                        console.log(`🎨 Image optimized: ${Math.round(res.length / 1024)}KB → ${Math.round(optimized.length / 1024)}KB`);
+                        callback(optimized);
+                    } else {
+                        alert("Failed to process image. The file may be corrupted or invalid.");
+                    }
                 });
             }
         };

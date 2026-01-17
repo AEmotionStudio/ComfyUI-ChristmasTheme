@@ -268,7 +268,10 @@ async function optimizeImage(dataUrl, maxSize = 128) {
       }
       resolve(result);
     };
-    img.onerror = () => resolve(dataUrl);
+    img.onerror = () => {
+      console.error("Failed to load image for optimization - invalid image data");
+      resolve(null);
+    };
     img.src = dataUrl;
   });
 }
@@ -278,6 +281,10 @@ function handleFileUpload(callback) {
     var _a;
     const file = (_a = e.target.files) == null ? void 0 : _a[0];
     if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      alert("Invalid file type! Please select an image.");
+      return;
+    }
     if (file.size > 5 * 1024 * 1024) {
       alert("Image too large! Please select an image under 5MB.");
       return;
@@ -288,8 +295,12 @@ function handleFileUpload(callback) {
       const res = (_a2 = evt.target) == null ? void 0 : _a2.result;
       if (res) {
         optimizeImage(res).then((optimized) => {
-          console.log(`🎨 Image optimized: ${Math.round(res.length / 1024)}KB → ${Math.round(optimized.length / 1024)}KB`);
-          callback(optimized);
+          if (optimized) {
+            console.log(`🎨 Image optimized: ${Math.round(res.length / 1024)}KB → ${Math.round(optimized.length / 1024)}KB`);
+            callback(optimized);
+          } else {
+            alert("Failed to process image. The file may be corrupted or invalid.");
+          }
         });
       }
     };
@@ -509,4 +520,7 @@ app.registerExtension({
     }, 100);
   }
 });
+export {
+  optimizeImage
+};
 //# sourceMappingURL=christmas-sidebar.js.map
