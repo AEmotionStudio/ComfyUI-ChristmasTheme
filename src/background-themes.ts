@@ -65,6 +65,7 @@ interface NebulaEntity {
     pulseSpeed?: number;
     pulseOffset?: number;
     opacity?: number;
+    cachedGradient?: CanvasGradient;
 }
 
 interface BgSnowflake {
@@ -1648,6 +1649,7 @@ function drawMouseParticles(ctx) {
 
 // Gradient caching
 let cachedGradient = null;
+let cachedHorizonGlow = null;
 let cachedTheme = null;
 let cachedWidth = 0;
 let cachedHeight = 0;
@@ -2336,6 +2338,8 @@ function drawEnhancedBackground(ctx, width, height) {
     if (!isExecuting && !inCooldown && !starInitialized) {
         cachedWidth = width;
         cachedHeight = height;
+        // Reset horizon glow cache when dimensions change
+        cachedHorizonGlow = null;
         initStars(width, height);
     }
 
@@ -2452,34 +2456,45 @@ function drawEnhancedBackground(ctx, width, height) {
 
     // Atmospheric glow at horizon (subtle light pollution effect)
     if (!lowPerfMode) {
-        const horizonGlow = ctx.createLinearGradient(0, height * 0.7, 0, height);
-        horizonGlow.addColorStop(0, 'rgba(0, 0, 0, 0)');
-        horizonGlow.addColorStop(0.5, 'rgba(20, 30, 60, 0.05)');
-        horizonGlow.addColorStop(1, 'rgba(40, 50, 80, 0.1)');
+        // Cache horizon glow gradient (recreate if height changes)
+        if (!cachedHorizonGlow || cachedHeight !== height) {
+            const horizonGlow = ctx.createLinearGradient(0, height * 0.7, 0, height);
+            horizonGlow.addColorStop(0, 'rgba(0, 0, 0, 0)');
+            horizonGlow.addColorStop(0.5, 'rgba(20, 30, 60, 0.05)');
+            horizonGlow.addColorStop(1, 'rgba(40, 50, 80, 0.1)');
+            cachedHorizonGlow = horizonGlow;
+            // Ensure cachedHeight is updated if we updated the glow
+            cachedHeight = height;
+        }
         ctx.globalAlpha = 1;
-        ctx.fillStyle = horizonGlow;
+        ctx.fillStyle = cachedHorizonGlow;
         ctx.fillRect(0, height * 0.7, width, height * 0.3);
     }
 
     // Draw nebula clouds (soft glowing areas) - skip in low perf mode
     if (!lowPerfMode && nebulaEntities.length > 0) {
         for (const nebula of nebulaEntities) {
-            // Static opacity to prevent quantization flicker at low alpha values
-            const nebulaOpacity = nebula.opacity;
+            // Check for cached gradient or create it
+            if (!nebula.cachedGradient) {
+                // Static opacity to prevent quantization flicker at low alpha values
+                const nebulaOpacity = nebula.opacity;
 
-            // Create radial gradient for soft nebula effect
-            const nebulaGradient = ctx.createRadialGradient(
-                nebula.x, nebula.y, 0,
-                nebula.x, nebula.y, nebula.radius
-            );
+                // Create radial gradient for soft nebula effect
+                const nebulaGradient = ctx.createRadialGradient(
+                    nebula.x, nebula.y, 0,
+                    nebula.x, nebula.y, nebula.radius
+                );
 
-            // More subtle, lower opacity nebula colors
-            nebulaGradient.addColorStop(0, `rgba(80, 120, 200, ${nebulaOpacity * 0.6})`);
-            nebulaGradient.addColorStop(0.4, `rgba(60, 100, 180, ${nebulaOpacity * 0.3})`);
-            nebulaGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                // More subtle, lower opacity nebula colors
+                nebulaGradient.addColorStop(0, `rgba(80, 120, 200, ${nebulaOpacity * 0.6})`);
+                nebulaGradient.addColorStop(0.4, `rgba(60, 100, 180, ${nebulaOpacity * 0.3})`);
+                nebulaGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+                nebula.cachedGradient = nebulaGradient;
+            }
 
             ctx.globalAlpha = 1;
-            ctx.fillStyle = nebulaGradient;
+            ctx.fillStyle = nebula.cachedGradient;
             ctx.beginPath();
             ctx.arc(nebula.x, nebula.y, nebula.radius, 0, Math.PI * 2);
             ctx.fill();
